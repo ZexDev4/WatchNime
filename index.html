@@ -51,6 +51,8 @@
   <script>
     // Base URL untuk API
     const API_BASE_URL = 'https://watch-nime-gilt.vercel.app';
+    // Placeholder gambar untuk thumbnail yang gagal
+    const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image';
 
     // Toggle menu mobile
     document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -68,12 +70,35 @@
         fetchPopularEpisodes();
       } else if (path.startsWith('/series/')) {
         const seriesId = path.split('/')[2];
+        if (!seriesId || seriesId.trim() === '') {
+          content.innerHTML = `
+            <div class="text-center py-10 text-red-400">
+              Invalid series ID
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            </div>
+          `;
+          return;
+        }
         fetchSeriesDetail(seriesId);
       } else if (path.startsWith('/episode/') && path.endsWith('/video')) {
         const episodeId = path.split('/')[2];
+        if (!episodeId || episodeId.trim() === '') {
+          content.innerHTML = `
+            <div class="text-center py-10 text-red-400">
+              Invalid episode ID
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            </div>
+          `;
+          return;
+        }
         fetchVideo(episodeId);
       } else {
-        content.innerHTML = '<div class="text-center py-10 text-red-400">Page not found</div>';
+        content.innerHTML = `
+          <div class="text-center py-10 text-red-400">
+            Page not found
+            <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+          </div>
+        `;
       }
     }
 
@@ -90,7 +115,11 @@
                 ${episodes.map(episode => `
                   <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
                     <div class="relative">
-                      <img src="${episode.series_image}" alt="${episode.series_title}" class="w-full h-48 object-cover" loading="lazy">
+                      <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
+                           onerror="this.src='${PLACEHOLDER_IMAGE}'" 
+                           alt="${episode.series_title}" 
+                           class="w-full h-48 object-cover" 
+                           loading="lazy">
                       <div class="absolute bottom-0 w-full p-4 gradient-overlay">
                         <h2 class="text-lg font-semibold text-white">${episode.series_title}</h2>
                         <p class="text-sm text-gray-300">Episode ${episode.episode_number}</p>
@@ -106,11 +135,21 @@
               </div>
             `;
           } else {
-            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Failed to fetch popular episodes</div>';
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-red-400">
+                Failed to fetch popular episodes
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Try Again</a>
+              </div>
+            `;
           }
         })
-        .catch(() => {
-          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching data</div>';
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-400">
+              Error fetching data: ${error.message}
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            </div>
+          `;
         });
     }
 
@@ -118,46 +157,64 @@
     function fetchSeriesDetail(seriesId) {
       axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
         .then(response => {
-          if (response.data.status === 'success') {
+          if (response.data.status === 'success' && response.data.series) {
             const series = response.data.series;
-            const episodes = response.data.episodes;
+            const episodes = response.data.episodes || [];
             const content = document.getElementById('content');
             content.innerHTML = `
               <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">${series.title}</h1>
               <div class="flex flex-col md:flex-row gap-6">
-                <img src="${series.image_url}" alt="${series.title}" class="w-full md:w-1/3 h-96 object-cover rounded-xl shadow-lg" loading="lazy">
+                <img src="${series.image_url || PLACEHOLDER_IMAGE}" 
+                     onerror="this.src='${PLACEHOLDER_IMAGE}'" 
+                     alt="${series.title}" 
+                     class="w-full md:w-1/3 h-96 object-cover rounded-xl shadow-lg" 
+                     loading="lazy">
                 <div class="flex-1">
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Synopsis:</strong> ${series.synopsis}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Type:</strong> ${series.type}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Status:</strong> ${series.status}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Type:</strong> ${series.type || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Status:</strong> ${series.status || 'N/A'}</p>
                   <p class="text-gray-300 mb-3"><strong class="text-blue-400">Season:</strong> ${series.season || 'N/A'}</p>
                   <p class="text-gray-300 mb-3"><strong class="text-blue-400">Studio:</strong> ${series.studio || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Genres:</strong> ${series.genres.join(', ')}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Total Episodes:</strong> ${series.total_episode}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Genres:</strong> ${series.genres && series.genres.length ? series.genres.join(', ') : 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Total Episodes:</strong> ${series.total_episode || 'N/A'}</p>
                   <p class="text-gray-300 mb-3"><strong class="text-blue-400">Rating:</strong> ${series.rating || 'N/A'}</p>
                 </div>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold mt-10 mb-6 text-blue-300 tracking-tight">Episodes</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                ${episodes.map(episode => `
+                ${episodes.length ? episodes.map(episode => `
                   <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
-                    <img src="${episode.thumbnail}" alt="Episode ${episode.number}" class="w-full h-40 object-cover" loading="lazy">
+                    <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" 
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
+                         alt="Episode ${episode.number}" 
+                         class="w-full h-40 object-cover" 
+                         loading="lazy">
                     <div class="p-4">
                       <p class="text-gray-300">Episode ${episode.number}</p>
-                      <p class="text-gray-400 text-sm">Views: ${episode.views.toLocaleString()}</p>
-                      <p class="text-gray-400 text-sm">Duration: ${episode.duration_min} min</p>
+                      <p class="text-gray-400 text-sm">Views: ${episode.views ? episode.views.toLocaleString() : 'N/A'}</p>
+                      <p class="text-gray-400 text-sm">Duration: ${episode.duration_min || 'N/A'} min</p>
                       <a href="/episode/${episode.episode_id}/video" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Watch Video</a>
                     </div>
                   </div>
-                `).join('')}
+                `).join('') : '<div class="text-center text-gray-400">No episodes available</div>'}
               </div>
             `;
           } else {
-            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Series not found</div>';
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-red-400">
+                Series not found
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              </div>
+            `;
           }
         })
-        .catch(() => {
-          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching data</div>';
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-400">
+              Error fetching series: ${error.message}
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            </div>
+          `;
         });
     }
 
@@ -219,11 +276,21 @@
               });
             });
           } else {
-            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">No videos available</div>';
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-red-400">
+                No videos available
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              </div>
+            `;
           }
         })
-        .catch(() => {
-          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching video</div>';
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-400">
+              Error fetching video: ${error.message}
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            </div>
+          `;
         });
     }
 
