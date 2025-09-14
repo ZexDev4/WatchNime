@@ -3,228 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AnimePlay Frontend</title>
+  <title>WatchNime</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-router-dom@6.4.3/dist/umd/react-router-dom.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+  <style>
+    /* Custom Tailwind styles untuk animasi dan efek modern */
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+    .gradient-overlay {
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white">
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-    const { BrowserRouter, Routes, Route, Link, useParams, useNavigate } = ReactRouterDOM;
+<body class="bg-gray-950 text-white min-h-screen font-sans">
+  <!-- Navbar -->
+  <nav class="bg-gray-900/95 backdrop-blur-md p-4 fixed w-full top-0 z-20 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/populer" id="home-link" class="text-2xl font-bold text-blue-400 tracking-tight">WatchNime</a>
+      <div class="md:hidden">
+        <button id="menu-toggle" class="text-blue-400 focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="menu" class="hidden md:flex space-x-4">
+        <a href="/populer" class="text-gray-300 hover:text-blue-400 transition-colors">Popular</a>
+      </div>
+    </div>
+  </nav>
+  <div id="mobile-menu" class="hidden bg-gray-900/95 p-4 mt-16 fixed w-full z-10">
+    <a href="/populer" class="block text-gray-300 hover:text-blue-400 transition-colors py-2">Popular</a>
+  </div>
 
-    // Komponen Navigasi
-    function Navbar() {
-      return (
-        <nav class="bg-gray-800 p-4 shadow-md">
-          <div class="container mx-auto">
-            <Link to="/populer" class="text-2xl font-bold text-blue-400">AnimePlay</Link>
-          </div>
-        </nav>
-      );
+  <!-- Main Content -->
+  <div class="container mx-auto p-4 pt-20" id="content"></div>
+
+  <script>
+    // Base URL untuk API
+    const API_BASE_URL = 'https://watch-nime-gilt.vercel.app';
+
+    // Toggle menu mobile
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // Fungsi untuk merender halaman
+    function renderPage(path) {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div class="text-center py-10 text-blue-400">Loading...</div>';
+      content.classList.add('fade-in');
+
+      if (path === '/populer' || path === '/') {
+        fetchPopularEpisodes();
+      } else if (path.startsWith('/series/')) {
+        const seriesId = path.split('/')[2];
+        fetchSeriesDetail(seriesId);
+      } else if (path.startsWith('/episode/') && path.endsWith('/video')) {
+        const episodeId = path.split('/')[2];
+        fetchVideo(episodeId);
+      } else {
+        content.innerHTML = '<div class="text-center py-10 text-red-400">Page not found</div>';
+      }
     }
 
-    // Komponen untuk Daftar Episode Populer
-    function PopularEpisodes() {
-      const [episodes, setEpisodes] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
+    // Fetch dan render episode populer
+    function fetchPopularEpisodes() {
+      axios.get(`${API_BASE_URL}/api/populer_episodes`)
+        .then(response => {
+          if (response.data.status === 'success') {
+            const episodes = response.data.data;
+            const content = document.getElementById('content');
+            content.innerHTML = `
+              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">Popular Episodes</h1>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                ${episodes.map(episode => `
+                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
+                    <div class="relative">
+                      <img src="${episode.series_image}" alt="${episode.series_title}" class="w-full h-48 object-cover" loading="lazy">
+                      <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                        <h2 class="text-lg font-semibold text-white">${episode.series_title}</h2>
+                        <p class="text-sm text-gray-300">Episode ${episode.episode_number}</p>
+                      </div>
+                    </div>
+                    <div class="p-4">
+                      <p class="text-sm text-gray-400">Views: ${episode.total_views.toLocaleString()}</p>
+                      <p class="text-sm text-gray-400">Rating: ${episode.rating || 'N/A'}</p>
+                      <a href="/series/${episode.series_id}" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">View Series</a>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Failed to fetch popular episodes</div>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching data</div>';
+        });
+    }
 
-      useEffect(() => {
-        axios.get('/api/populer_episodes')
-          .then(response => {
-            if (response.data.status === 'success') {
-              setEpisodes(response.data.data);
-              setLoading(false);
-            } else {
-              setError('Failed to fetch popular episodes');
-              setLoading(false);
-            }
-          })
-          .catch(() => {
-            setError('Error fetching data');
-            setLoading(false);
-          });
-      }, []);
-
-      if (loading) return <div class="text-center py-10">Loading...</div>;
-      if (error) return <div class="text-center py-10 text-red-500">{error}</div>;
-
-      return (
-        <div class="container mx-auto p-4">
-          <h1 class="text-3xl font-bold mb-6">Popular Episodes</h1>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {episodes.map(episode => (
-              <div key={episode.episode_id} class="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-                <img src={episode.series_image} alt={episode.series_title} class="w-full h-48 object-cover" />
-                <div class="p-4">
-                  <h2 class="text-xl font-semibold">{episode.series_title}</h2>
-                  <p class="text-gray-400">Episode {episode.episode_number}</p>
-                  <p class="text-gray-400">Views: {episode.total_views}</p>
-                  <p class="text-gray-400">Rating: {episode.rating || 'N/A'}</p>
-                  <Link to={`/series/${episode.series_id}`} class="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    View Series
-                  </Link>
+    // Fetch dan render detail seri
+    function fetchSeriesDetail(seriesId) {
+      axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
+        .then(response => {
+          if (response.data.status === 'success') {
+            const series = response.data.series;
+            const episodes = response.data.episodes;
+            const content = document.getElementById('content');
+            content.innerHTML = `
+              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">${series.title}</h1>
+              <div class="flex flex-col md:flex-row gap-6">
+                <img src="${series.image_url}" alt="${series.title}" class="w-full md:w-1/3 h-96 object-cover rounded-xl shadow-lg" loading="lazy">
+                <div class="flex-1">
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Synopsis:</strong> ${series.synopsis}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Type:</strong> ${series.type}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Status:</strong> ${series.status}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Season:</strong> ${series.season || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Studio:</strong> ${series.studio || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Genres:</strong> ${series.genres.join(', ')}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Total Episodes:</strong> ${series.total_episode}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Rating:</strong> ${series.rating || 'N/A'}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      );
+              <h2 class="text-2xl md:text-3xl font-bold mt-10 mb-6 text-blue-300 tracking-tight">Episodes</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                ${episodes.map(episode => `
+                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
+                    <img src="${episode.thumbnail}" alt="Episode ${episode.number}" class="w-full h-40 object-cover" loading="lazy">
+                    <div class="p-4">
+                      <p class="text-gray-300">Episode ${episode.number}</p>
+                      <p class="text-gray-400 text-sm">Views: ${episode.views.toLocaleString()}</p>
+                      <p class="text-gray-400 text-sm">Duration: ${episode.duration_min} min</p>
+                      <a href="/episode/${episode.episode_id}/video" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Watch Video</a>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Series not found</div>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching data</div>';
+        });
     }
 
-    // Komponen untuk Detail Seri
-    function SeriesDetail() {
-      const { seriesId } = useParams();
-      const [series, setSeries] = useState(null);
-      const [episodes, setEpisodes] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-
-      useEffect(() => {
-        axios.get(`/api/series/${seriesId}`)
-          .then(response => {
-            if (response.data.status === 'success') {
-              setSeries(response.data.series);
-              setEpisodes(response.data.episodes);
-              setLoading(false);
-            } else {
-              setError('Failed to fetch series details');
-              setLoading(false);
-            }
-          })
-          .catch(() => {
-            setError('Error fetching data');
-            setLoading(false);
-          });
-      }, [seriesId]);
-
-      if (loading) return <div class="text-center py-10">Loading...</div>;
-      if (error) return <div class="text-center py-10 text-red-500">{error}</div>;
-      if (!series) return <div class="text-center py-10">Series not found</div>;
-
-      return (
-        <div class="container mx-auto p-4">
-          <h1 class="text-3xl font-bold mb-6">{series.title}</h1>
-          <div class="flex flex-col md:flex-row gap-6">
-            <img src={series.image_url} alt={series.title} class="w-full md:w-1/3 h-96 object-cover rounded-lg" />
-            <div class="flex-1">
-              <p class="text-gray-400 mb-2"><strong>Synopsis:</strong> {series.synopsis}</p>
-              <p class="text-gray-400 mb-2"><strong>Type:</strong> {series.type}</p>
-              <p class="text-gray-400 mb-2"><strong>Status:</strong> {series.status}</p>
-              <p class="text-gray-400 mb-2"><strong>Season:</strong> {series.season || 'N/A'}</p>
-              <p class="text-gray-400 mb-2"><strong>Studio:</strong> {series.studio || 'N/A'}</p>
-              <p class="text-gray-400 mb-2"><strong>Genres:</strong> {series.genres.join(', ')}</p>
-              <p class="text-gray-400 mb-2"><strong>Total Episodes:</strong> {series.total_episode}</p>
-              <p class="text-gray-400 mb-2"><strong>Rating:</strong> {series.rating || 'N/A'}</p>
-            </div>
-          </div>
-          <h2 class="text-2xl font-bold mt-8 mb-4">Episodes</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {episodes.map(episode => (
-              <div key={episode.episode_id} class="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-                <img src={episode.thumbnail} alt={`Episode ${episode.number}`} class="w-full h-40 object-cover" />
-                <div class="p-4">
-                  <p class="text-gray-400">Episode {episode.number}</p>
-                  <p class="text-gray-400">Views: {episode.views}</p>
-                  <p class="text-gray-400">Duration: {episode.duration_min} min</p>
-                  <Link to={`/episode/${episode.episode_id}/video`} class="mt-2 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Watch Video
-                  </Link>
+    // Fetch dan render pemutar video
+    function fetchVideo(episodeId) {
+      axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
+        .then(response => {
+          if (response.data.status === 'success' && response.data.data.length > 0) {
+            const videos = response.data.data;
+            const defaultVideo = videos[0];
+            const content = document.getElementById('content');
+            content.innerHTML = `
+              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">Watch Episode</h1>
+              <div class="mb-6">
+                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl shadow-lg" src="${defaultVideo.streaming_url}">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              <div class="mb-6">
+                <h2 class="text-xl md:text-2xl font-semibold text-blue-300">Available Qualities</h2>
+                <div class="flex flex-wrap gap-3 mt-3" id="quality-buttons">
+                  ${videos.map(video => `
+                    <button
+                      data-url="${video.streaming_url}"
+                      data-id="${video.id}"
+                      class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-600' : 'bg-gray-700'} hover:bg-blue-500 text-white transition-colors quality-btn"
+                    >
+                      ${video.quality} (${video.file_size} MB)
+                    </button>
+                  `).join('')}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      );
+              <a
+                href="${defaultVideo.download_url}"
+                target="_blank"
+                rel="noopener noreferrer"
+                id="download-link"
+                class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Download (${defaultVideo.quality})
+              </a>
+            `;
+
+            // Event listener untuk tombol kualitas
+            document.querySelectorAll('.quality-btn').forEach(button => {
+              button.addEventListener('click', () => {
+                const videoPlayer = document.getElementById('video-player');
+                const downloadLink = document.getElementById('download-link');
+                const newUrl = button.getAttribute('data-url');
+                const quality = button.textContent.split(' ')[0];
+                videoPlayer.src = newUrl;
+                downloadLink.href = newUrl;
+                downloadLink.textContent = `Download (${quality})`;
+                document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('bg-blue-600'));
+                document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.add('bg-gray-700'));
+                button.classList.remove('bg-gray-700');
+                button.classList.add('bg-blue-600');
+                videoPlayer.play();
+              });
+            });
+          } else {
+            document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">No videos available</div>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('content').innerHTML = '<div class="text-center py-10 text-red-400">Error fetching video</div>';
+        });
     }
 
-    // Komponen untuk Pemutar Video
-    function VideoPlayer() {
-      const { episodeId } = useParams();
-      const [videos, setVideos] = useState([]);
-      const [selectedVideo, setSelectedVideo] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-
-      useEffect(() => {
-        axios.get(`/api/episode/${episodeId}/video`)
-          .then(response => {
-            if (response.data.status === 'success') {
-              setVideos(response.data.data);
-              setSelectedVideo(response.data.data[0]); // Default ke video pertama
-              setLoading(false);
-            } else {
-              setError('Failed to fetch video');
-              setLoading(false);
-            }
-          })
-          .catch(() => {
-            setError('Error fetching video');
-            setLoading(false);
-          });
-      }, [episodeId]);
-
-      if (loading) return <div class="text-center py-10">Loading...</div>;
-      if (error) return <div class="text-center py-10 text-red-500">{error}</div>;
-      if (!videos.length) return <div class="text-center py-10">No videos available</div>;
-
-      return (
-        <div class="container mx-auto p-4">
-          <h1 class="text-3xl font-bold mb-6">Watch Episode</h1>
-          <div class="mb-4">
-            <video controls class="w-full max-w-4xl mx-auto rounded-lg" src={selectedVideo.streaming_url}>
-              Your browser does not support the video tag.
-            </video>
-          </div>
-          <div class="mb-4">
-            <h2 class="text-xl font-semibold">Available Qualities</h2>
-            <div class="flex gap-2 mt-2">
-              {videos.map(video => (
-                <button
-                  key={video.id}
-                  onClick={() => setSelectedVideo(video)}
-                  class={`px-4 py-2 rounded ${selectedVideo.id === video.id ? 'bg-blue-600' : 'bg-gray-700'} hover:bg-blue-500 text-white`}
-                >
-                  {video.quality} ({video.file_size} MB)
-                </button>
-              ))}
-            </div>
-          </div>
-          <a
-            href={selectedVideo.download_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Download ({selectedVideo.quality})
-          </a>
-        </div>
-      );
+    // Client-side routing
+    function handleNavigation(event) {
+      event.preventDefault();
+      const path = event.target.getAttribute('href');
+      history.pushState(null, null, path);
+      renderPage(path);
+      document.getElementById('mobile-menu').classList.add('hidden'); // Tutup menu mobile
     }
 
-    // Komponen Utama
-    function App() {
-      return (
-        <BrowserRouter>
-          <Navbar />
-          <Routes>
-            <Route path="/populer" element={<PopularEpisodes />} />
-            <Route path="/series/:seriesId" element={<SeriesDetail />} />
-            <Route path="/episode/:episodeId/video" element={<VideoPlayer />} />
-            <Route path="*" element={<PopularEpisodes />} />
-          </Routes>
-        </BrowserRouter>
-      );
-    }
-
-    // Render aplikasi
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    // Inisialisasi halaman
+    window.addEventListener('popstate', () => renderPage(window.location.pathname));
+    document.addEventListener('click', event => {
+      if (event.target.tagName === 'A' && event.target.getAttribute('href').startsWith('/')) {
+        handleNavigation(event);
+      }
+    });
+    renderPage(window.location.pathname);
   </script>
 </body>
 </html>
