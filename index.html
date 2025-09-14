@@ -6,29 +6,47 @@
   <title>WatchNime</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     /* Custom Tailwind styles untuk animasi dan efek modern */
     .card-hover:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
+      border-color: rgba(59, 130, 246, 0.6);
     }
     .gradient-overlay {
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
     }
     .fade-in {
       animation: fadeIn 0.5s ease-in;
+    }
+    .spinner {
+      animation: spin 1s linear infinite;
     }
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .free-badge {
+      background: rgba(59, 130, 246, 0.9);
+      border-radius: 9999px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
   </style>
 </head>
 <body class="bg-gray-950 text-white min-h-screen font-sans">
   <!-- Navbar -->
-  <nav class="bg-gray-900/95 backdrop-blur-md p-4 fixed w-full top-0 z-20 shadow-lg">
+  <nav class="bg-gray-900/95 backdrop-blur-md p-4 fixed w-full top-0 z-20 shadow-lg border-b border-blue-500/20">
     <div class="container mx-auto flex justify-between items-center">
-      <a href="/populer" id="home-link" class="text-2xl font-bold text-blue-400 tracking-tight">WatchNime</a>
+      <a href="/populer" id="home-link" class="text-2xl md:text-3xl font-extrabold text-blue-400 tracking-tight">WatchNime</a>
       <div class="md:hidden">
         <button id="menu-toggle" class="text-blue-400 focus:outline-none">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,13 +54,13 @@
           </svg>
         </button>
       </div>
-      <div id="menu" class="hidden md:flex space-x-4">
-        <a href="/populer" class="text-gray-300 hover:text-blue-400 transition-colors">Popular</a>
+      <div id="menu" class="hidden md:flex space-x-6">
+        <a href="/populer" class="text-gray-200 hover:text-blue-400 transition-colors duration-200">Popular</a>
       </div>
     </div>
   </nav>
-  <div id="mobile-menu" class="hidden bg-gray-900/95 p-4 mt-16 fixed w-full z-10">
-    <a href="/populer" class="block text-gray-300 hover:text-blue-400 transition-colors py-2">Popular</a>
+  <div id="mobile-menu" class="hidden bg-gray-900/95 p-4 mt-16 fixed w-full z-10 shadow-lg border-b border-blue-500/20 transition-all duration-300">
+    <a href="/populer" class="block text-gray-200 hover:text-blue-400 transition-colors duration-200 py-2">Popular</a>
   </div>
 
   <!-- Main Content -->
@@ -51,8 +69,8 @@
   <script>
     // Base URL untuk API
     const API_BASE_URL = 'https://watch-nime-gilt.vercel.app';
-    // Placeholder gambar untuk thumbnail yang gagal
-    const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/300x200?text=No+Image';
+    // Placeholder gambar kecil (base64) untuk rendering cepat
+    const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
 
     // Toggle menu mobile
     document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -63,7 +81,12 @@
     // Fungsi untuk merender halaman
     function renderPage(path) {
       const content = document.getElementById('content');
-      content.innerHTML = '<div class="text-center py-10 text-blue-400">Loading...</div>';
+      content.innerHTML = `
+        <div class="text-center py-10 text-blue-400">
+          <i class="fas fa-spinner fa-2x spinner"></i>
+          <p class="mt-2">Loading...</p>
+        </div>
+      `;
       content.classList.add('fade-in');
 
       if (path === '/populer' || path === '/') {
@@ -74,7 +97,7 @@
           content.innerHTML = `
             <div class="text-center py-10 text-red-400">
               Invalid series ID
-              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
             </div>
           `;
           return;
@@ -86,7 +109,7 @@
           content.innerHTML = `
             <div class="text-center py-10 text-red-400">
               Invalid episode ID
-              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
             </div>
           `;
           return;
@@ -96,7 +119,7 @@
         content.innerHTML = `
           <div class="text-center py-10 text-red-400">
             Page not found
-            <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+            <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
           </div>
         `;
       }
@@ -110,16 +133,21 @@
             const episodes = response.data.data;
             const content = document.getElementById('content');
             content.innerHTML = `
-              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">Popular Episodes</h1>
+              <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-blue-300 tracking-tight">Popular Episodes</h1>
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 ${episodes.map(episode => `
-                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
+                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300 border border-blue-500/20">
                     <div class="relative">
                       <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
                            onerror="this.src='${PLACEHOLDER_IMAGE}'" 
                            alt="${episode.series_title}" 
                            class="w-full h-48 object-cover" 
+                           width="300" 
+                           height="200" 
                            loading="lazy">
+                      <div class="absolute top-2 right-2 free-badge text-white">
+                        <i class="fas fa-gift"></i> Free
+                      </div>
                       <div class="absolute bottom-0 w-full p-4 gradient-overlay">
                         <h2 class="text-lg font-semibold text-white">${episode.series_title}</h2>
                         <p class="text-sm text-gray-300">Episode ${episode.episode_number}</p>
@@ -128,7 +156,7 @@
                     <div class="p-4">
                       <p class="text-sm text-gray-400">Views: ${episode.total_views.toLocaleString()}</p>
                       <p class="text-sm text-gray-400">Rating: ${episode.rating || 'N/A'}</p>
-                      <a href="/series/${episode.series_id}" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">View Series</a>
+                      <a href="/series/${episode.series_id}" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">View Series</a>
                     </div>
                   </div>
                 `).join('')}
@@ -138,7 +166,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-400">
                 Failed to fetch popular episodes
-                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Try Again</a>
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Try Again</a>
               </div>
             `;
           }
@@ -147,7 +175,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-400">
               Error fetching data: ${error.message}
-              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
             </div>
           `;
         });
@@ -162,38 +190,47 @@
             const episodes = response.data.episodes || [];
             const content = document.getElementById('content');
             content.innerHTML = `
-              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">${series.title}</h1>
+              <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-blue-300 tracking-tight">${series.title}</h1>
               <div class="flex flex-col md:flex-row gap-6">
                 <img src="${series.image_url || PLACEHOLDER_IMAGE}" 
                      onerror="this.src='${PLACEHOLDER_IMAGE}'" 
                      alt="${series.title}" 
-                     class="w-full md:w-1/3 h-96 object-cover rounded-xl shadow-lg" 
+                     class="w-full md:w-1/3 h-96 object-cover rounded-xl shadow-lg border border-blue-500/20" 
+                     width="400" 
+                     height="600" 
                      loading="lazy">
                 <div class="flex-1">
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Type:</strong> ${series.type || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Status:</strong> ${series.status || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Season:</strong> ${series.season || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Studio:</strong> ${series.studio || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Genres:</strong> ${series.genres && series.genres.length ? series.genres.join(', ') : 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Total Episodes:</strong> ${series.total_episode || 'N/A'}</p>
-                  <p class="text-gray-300 mb-3"><strong class="text-blue-400">Rating:</strong> ${series.rating || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Type:</strong> ${series.type || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Status:</strong> ${series.status || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Season:</strong> ${series.season || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Studio:</strong> ${series.studio || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Genres:</strong> ${series.genres && series.genres.length ? series.genres.join(', ') : 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Total Episodes:</strong> ${series.total_episode || 'N/A'}</p>
+                  <p class="text-gray-300 mb-3"><strong class="text-blue-400 font-semibold">Rating:</strong> ${series.rating || 'N/A'}</p>
                 </div>
               </div>
-              <h2 class="text-2xl md:text-3xl font-bold mt-10 mb-6 text-blue-300 tracking-tight">Episodes</h2>
+              <h2 class="text-2xl md:text-3xl font-extrabold mt-10 mb-6 text-blue-300 tracking-tight">Episodes</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 ${episodes.length ? episodes.map(episode => `
-                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
-                    <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" 
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                         alt="Episode ${episode.number}" 
-                         class="w-full h-40 object-cover" 
-                         loading="lazy">
+                  <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300 border border-blue-500/20">
+                    <div class="relative">
+                      <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" 
+                           onerror="this.src='${PLACEHOLDER_IMAGE}'" 
+                           alt="Episode ${episode.number}" 
+                           class="w-full h-40 object-cover" 
+                           width="300" 
+                           height="200" 
+                           loading="lazy">
+                      <div class="absolute top-2 right-2 free-badge text-white">
+                        <i class="fas fa-gift"></i> Free
+                      </div>
+                    </div>
                     <div class="p-4">
-                      <p class="text-gray-300">Episode ${episode.number}</p>
+                      <p class="text-gray-300 font-medium">Episode ${episode.number}</p>
                       <p class="text-gray-400 text-sm">Views: ${episode.views ? episode.views.toLocaleString() : 'N/A'}</p>
                       <p class="text-gray-400 text-sm">Duration: ${episode.duration_min || 'N/A'} min</p>
-                      <a href="/episode/${episode.episode_id}/video" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Watch Video</a>
+                      <a href="/episode/${episode.episode_id}/video" class="mt-3 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Watch Video</a>
                     </div>
                   </div>
                 `).join('') : '<div class="text-center text-gray-400">No episodes available</div>'}
@@ -203,7 +240,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-400">
                 Series not found
-                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
               </div>
             `;
           }
@@ -212,7 +249,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-400">
               Error fetching series: ${error.message}
-              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
             </div>
           `;
         });
@@ -227,9 +264,9 @@
             const defaultVideo = videos[0];
             const content = document.getElementById('content');
             content.innerHTML = `
-              <h1 class="text-3xl md:text-4xl font-bold mb-8 text-blue-300 tracking-tight">Watch Episode</h1>
+              <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-blue-300 tracking-tight">Watch Episode</h1>
               <div class="mb-6">
-                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl shadow-lg" src="${defaultVideo.streaming_url}">
+                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl shadow-lg border border-blue-500/20" src="${defaultVideo.streaming_url}">
                   Your browser does not support the video tag.
                 </video>
               </div>
@@ -240,7 +277,7 @@
                     <button
                       data-url="${video.streaming_url}"
                       data-id="${video.id}"
-                      class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-600' : 'bg-gray-700'} hover:bg-blue-500 text-white transition-colors quality-btn"
+                      class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-600' : 'bg-gray-700'} hover:bg-blue-500 text-white transition-colors duration-200 quality-btn"
                     >
                       ${video.quality} (${video.file_size} MB)
                     </button>
@@ -252,7 +289,7 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 id="download-link"
-                class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
               >
                 Download (${defaultVideo.quality})
               </a>
@@ -279,7 +316,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-400">
                 No videos available
-                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+                <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
               </div>
             `;
           }
@@ -288,7 +325,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-400">
               Error fetching video: ${error.message}
-              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Back to Popular</a>
+              <a href="/populer" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Back to Popular</a>
             </div>
           `;
         });
@@ -300,7 +337,7 @@
       const path = event.target.getAttribute('href');
       history.pushState(null, null, path);
       renderPage(path);
-      document.getElementById('mobile-menu').classList.add('hidden'); // Tutup menu mobile
+      document.getElementById('mobile-menu').classList.add('hidden');
     }
 
     // Inisialisasi halaman
