@@ -13,11 +13,11 @@
   <style>
     /* Glassmorphism Effect */
     .glass {
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(200, 200, 200, 0.3);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(200, 200, 200, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
 
     /* Background */
@@ -117,6 +117,15 @@
       border-color: #2563eb;
     }
 
+    /* Search Button */
+    .search-btn {
+      transition: all 0.2s ease;
+    }
+
+    .search-btn:hover {
+      background-color: #2563eb;
+    }
+
     /* Logo Styling */
     .logo {
       transition: transform 0.2s ease;
@@ -124,6 +133,14 @@
 
     .logo:hover {
       transform: scale(1.05);
+    }
+
+    /* Footer */
+    .footer {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(200, 200, 200, 0.2);
     }
 
     /* Responsive Adjustments */
@@ -141,7 +158,7 @@
     }
   </style>
 </head>
-<body class="text-gray-900 min-h-screen">
+<body class="text-gray-900 min-h-screen flex flex-col">
   <!-- Navbar -->
   <nav class="glass fixed top-0 left-0 right-0 z-20 p-3 md:p-4">
     <div class="container mx-auto flex justify-between items-center">
@@ -149,8 +166,8 @@
         <img src="https://raw.githubusercontent.com/ZexDev4/WatchNime/main/watchnime.png" alt="WatchNime Logo" class="h-10 md:h-12 object-contain max-w-[150px] md:max-w-[200px]">
       </a>
       <div class="flex items-center gap-3 md:gap-4">
-        <!-- Search Bar -->
-        <div class="relative hidden md:block">
+        <!-- Search Bar (Desktop) -->
+        <div class="relative hidden md:flex items-center">
           <input type="text" id="search-input" placeholder="Search anime or donghua..." class="search-input pl-10 pr-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-600 text-gray-900 w-40 md:w-64">
           <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
         </div>
@@ -165,19 +182,31 @@
     </div>
   </nav>
   <div id="mobile-menu" class="hidden glass p-4 mt-16 fixed w-full z-10">
-    <div class="relative mb-4">
-      <input type="text" id="mobile-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-600 text-gray-900">
-      <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+    <div class="relative mb-4 flex items-center gap-2">
+      <div class="relative flex-1">
+        <input type="text" id="mobile-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-600 text-gray-900">
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+      </div>
+      <button id="mobile-search-btn" class="search-btn bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">
+        <i class="fas fa-search"></i>
+      </button>
     </div>
     <a href="/anime" class="block text-gray-900 hover:text-blue-600 transition-colors duration-200 py-2 slide-in"><i class="fas fa-film mr-1"></i> Anime</a>
     <a href="/donghua" class="block text-gray-900 hover:text-blue-600 transition-colors duration-200 py-2 slide-in"><i class="fas fa-video mr-1"></i> Donghua</a>
   </div>
 
   <!-- Main Content -->
-  <div class="container mx-auto p-4 pt-20 md:pt-24" id="content"></div>
+  <div class="container mx-auto p-4 pt-20 md:pt-24 flex-1" id="content"></div>
+
+  <!-- Footer -->
+  <footer class="footer w-full py-4 mt-8">
+    <div class="container mx-auto text-center text-gray-600 text-sm">
+      &copy; 2025 WatchNime by ZexDev
+    </div>
+  </footer>
 
   <script>
-    // Base URL for API (update to your backend URL)
+    // Base URL for API
     const API_BASE_URL = 'https://watch-nime-gilt.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
@@ -197,16 +226,25 @@
         history.pushState(null, null, `/search/${encodeURIComponent(keyword)}`);
         renderPage(`/search/${encodeURIComponent(keyword)}`);
         searchInput.value = ''; // Clear input after search
+        // Close mobile menu after search
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('active');
       }
     }
 
+    // Desktop search
     document.getElementById('search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
 
+    // Mobile search
     document.getElementById('mobile-search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
+
+    // Mobile search button
+    document.getElementById('mobile-search-btn')?.addEventListener('click', handleSearch);
 
     // Render page based on path
     function renderPage(path) {
@@ -238,7 +276,7 @@
           return;
         }
         fetchSeriesDetail(seriesId);
-      } else if (path.startsWith('/episode/') && path.endsWith('/video')) {
+      } else if (path.startsWith('/episode/') && !path.endsWith('/video')) {
         const episodeId = path.split('/')[2];
         if (!episodeId || episodeId.trim() === '') {
           content.innerHTML = `
@@ -279,7 +317,7 @@
             <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-900 tracking-tight fade-in">Anime List</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               ${episodes.map(episode => `
-                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-300 fade-in">
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-200 fade-in">
                   <div class="relative">
                     <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
                          onerror="this.src='${PLACEHOLDER_IMAGE}'" 
@@ -335,7 +373,7 @@
             <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-900 tracking-tight fade-in">Donghua List</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               ${episodes.map(episode => `
-                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-300 fade-in">
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-200 fade-in">
                   <div class="relative">
                     <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
                          onerror="this.src='${PLACEHOLDER_IMAGE}'" 
@@ -382,7 +420,7 @@
             <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-900 tracking-tight fade-in">Search Results for "${keyword}"</h1>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               ${series.length ? series.map(item => `
-                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-300 fade-in">
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-200 fade-in">
                   <div class="relative">
                     <img src="${item.image_url || PLACEHOLDER_IMAGE}" 
                          onerror="this.src='${PLACEHOLDER_IMAGE}'" 
@@ -441,7 +479,7 @@
               <img src="${series.image_url || PLACEHOLDER_IMAGE}" 
                    onerror="this.src='${PLACEHOLDER_IMAGE}'" 
                    alt="${series.title}" 
-                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-300" 
+                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-200" 
                    width="400" 
                    height="600" 
                    loading="lazy">
@@ -459,7 +497,7 @@
             <h2 class="text-2xl md:text-3xl font-extrabold mt-10 mb-6 text-gray-900 tracking-tight fade-in">Episodes</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               ${episodes.length ? episodes.map(episode => `
-                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-300 fade-in">
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-200 fade-in">
                   <div class="relative">
                     <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" 
                          onerror="this.src='${PLACEHOLDER_IMAGE}'" 
@@ -504,7 +542,7 @@
             content.innerHTML = `
               <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-900 tracking-tight fade-in">Watch Episode</h1>
               <div class="glass rounded-xl p-4 mb-6 fade-in">
-                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-300" src="${defaultVideo.streaming_url}">
+                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-200" src="${defaultVideo.streaming_url}">
                   Your browser does not support the video tag.
                 </video>
               </div>
