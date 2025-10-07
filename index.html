@@ -111,9 +111,13 @@
     /* Search Button */
     .search-btn {
       transition: all 0.2s ease;
+      touch-action: manipulation; /* Hilangkan 300ms delay di mobile */
     }
     .search-btn:hover {
       background-color: #1d4ed8;
+    }
+    .search-btn:active {
+      background-color: #1d4ed8; /* Feedback visual di touch */
     }
     /* Logo Styling */
     .logo {
@@ -237,14 +241,14 @@
     .dropdown-content a:last-child {
       border-radius: 0 0 0.5rem 0.5rem;
     }
-    /* Mobile Search in Home */
-    #mobile-home-search {
+    /* Mobile Search in Menu */
+    #mobile-search {
       display: none;
     }
     @media (max-width: 768px) {
-      #mobile-home-search {
+      #mobile-search {
         display: block;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
       }
       .hero {
         height: 50vh;
@@ -308,6 +312,16 @@
     </div>
   </nav>
   <div id="mobile-menu" class="hidden glass p-4 mt-16 fixed w-full z-10">
+    <!-- Mobile Search in Menu -->
+    <div id="mobile-search">
+      <div class="relative mb-2">
+        <input type="text" id="mobile-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500">
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+      <button id="mobile-search-btn" class="search-btn bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 w-full mb-4">
+        <i class="fas fa-search mr-1"></i> Search
+      </button>
+    </div>
     <a href="/anime" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-film mr-1"></i> Anime</a>
     <a href="/donghua" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-video mr-1"></i> Donghua</a>
   </div>
@@ -334,7 +348,7 @@
     function handleSearch() {
       // Cari input yang aktif berdasarkan context (home, desktop, dll.)
       let searchInput = document.getElementById('search-input') ||
-                        document.getElementById('mobile-home-search-input') ||
+                        document.getElementById('mobile-search-input') ||
                         document.querySelector('.search-input'); // Fallback ke yang pertama
       const keyword = (searchInput ? searchInput.value.trim() : '').replace(/\s+/g, ' '); // Normalize spasi
       if (keyword) {
@@ -355,14 +369,20 @@
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('desktop-search-btn')?.addEventListener('click', handleSearch);
-    // Event delegation untuk mobile search (agar work di SPA dan mobile browser)
+    // Event delegation untuk mobile search - pakai 'touchend' sebagai alternatif 'click' untuk mobile
+    document.addEventListener('touchend', (e) => {
+      if (e.target.id === 'mobile-search-btn' && !e.target.disabled) {
+        e.preventDefault(); // Cegah zoom atau scroll
+        handleSearch();
+      }
+    }, { passive: false });
     document.addEventListener('click', (e) => {
-      if (e.target.id === 'mobile-home-search-btn') {
+      if (e.target.id === 'mobile-search-btn' && !e.target.disabled) {
         handleSearch();
       }
     });
     document.addEventListener('keypress', (e) => {
-      if (e.target.id === 'mobile-home-search-input' && e.key === 'Enter') {
+      if (e.target.id === 'mobile-search-input' && e.key === 'Enter') {
         handleSearch();
       }
     });
@@ -450,16 +470,6 @@
         const featured = trending[0] || {};
         const content = document.getElementById('content');
         content.innerHTML = `
-          <!-- Mobile Search Bar (Visible only on mobile, above hero) -->
-          <div id="mobile-home-search" class="md:hidden">
-            <div class="relative mb-4">
-              <input type="text" id="mobile-home-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500">
-              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
-            <button id="mobile-home-search-btn" class="search-btn bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 w-full">
-              <i class="fas fa-search mr-1"></i> Search
-            </button>
-          </div>
           <!-- Hero Section -->
           <section class="hero fade-in">
             <img src="${featured.series_image || PLACEHOLDER_IMAGE}" alt="${featured.series_title || 'Featured Series'}" loading="lazy">
@@ -476,7 +486,7 @@
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
               <a href="/anime" class="glass p-4 rounded-xl text-center"><i class="fas fa-film text-2xl mb-2 block text-blue-400"></i><span>Anime</span></a>
               <a href="/donghua" class="glass p-4 rounded-xl text-center"><i class="fas fa-video text-2xl mb-2 block text-green-400"></i><span>Donghua</span></a>
-              <a href="/search/" class="glass p-4 rounded-xl text-center md:col-span-1"><i class="fas fa-search text-2xl mb-2 block text-purple-400"></i><span>Search</span></a>
+              <a href="#" class="glass p-4 rounded-xl text-center md:col-span-1" onclick="document.getElementById('menu-toggle').click();"><i class="fas fa-search text-2xl mb-2 block text-purple-400"></i><span>Search</span></a>
             </div>
           </section>
           <!-- Trending Now -->
