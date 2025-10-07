@@ -417,11 +417,14 @@
       ]).then(([animeRes, donghuaRes]) => {
         const animes = animeRes.data.data || [];
         const donghuas = donghuaRes.data.data || [];
+        // Combine all series for trending and latest
+        const allSeries = [...animes, ...donghuas];
         // Sort for trending (by views descending)
-        const trendingAnimes = [...animes].sort((a, b) => (b.total_views || 0) - (a.total_views || 0)).slice(0, 6);
-        const latestEpisodes = [...animes, ...donghuas].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0)).slice(0, 6);
+        const trending = [...allSeries].sort((a, b) => (b.total_views || 0) - (a.total_views || 0)).slice(0, 6);
+        // Sort for latest episodes (by date_created descending)
+        const latestEpisodes = [...allSeries].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0)).slice(0, 6);
         // Featured hero (pick first trending)
-        const featured = trendingAnimes[0] || {};
+        const featured = trending[0] || {};
         const content = document.getElementById('content');
         content.innerHTML = `
           <!-- Mobile Search Bar (Visible only on mobile, above hero) -->
@@ -439,7 +442,7 @@
             <img src="${featured.series_image || PLACEHOLDER_IMAGE}" alt="${featured.series_title || 'Featured Series'}" loading="lazy">
             <div class="hero-overlay">
               <div class="hero-content">
-                <h1 class="text-white">${featured.series_title || 'Featured Anime'}</h1>
+                <h1 class="text-white">${featured.series_title || 'Featured Anime/Donghua'}</h1>
                 <p class="text-gray-200">${featured.synopsis || 'Discover the latest and greatest in anime and donghua.'}</p>
                 <a href="/series/${featured.series_id || ''}" class="hero-btn"><i class="fas fa-play"></i> Watch Now</a>
               </div>
@@ -457,17 +460,17 @@
           <section class="mb-8 fade-in">
             <div class="section-header">
               <h2 class="section-title">Trending Now</h2>
-              <a href="/anime" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
+              <a href="/" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              ${trendingAnimes.map(anime => `
+              ${trending.map(series => `
                 <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
-                  <img src="${anime.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${anime.series_title}" class="w-full h-32 object-cover">
+                  <img src="${series.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${series.series_title}" class="w-full h-32 object-cover">
                   <div class="p-3">
-                    <h3 class="text-sm font-semibold truncate">${anime.series_title || 'Unknown'}</h3>
-                    <p class="text-xs text-gray-400">Ep ${anime.episode_number || 'N/A'}</p>
-                    <p class="text-xs text-gray-400">Views: ${anime.total_views?.toLocaleString() || 'N/A'}</p>
-                    <a href="/series/${anime.series_id}" class="mt-2 inline-block text-blue-500 text-xs hover:underline">View</a>
+                    <h3 class="text-sm font-semibold truncate">${series.series_title || 'Unknown'}</h3>
+                    <p class="text-xs text-gray-400">Ep ${series.episode_number || 'N/A'}</p>
+                    <p class="text-xs text-gray-400">Views: ${series.total_views?.toLocaleString() || 'N/A'}</p>
+                    <a href="/series/${series.series_id}" class="mt-2 inline-block text-blue-500 text-xs hover:underline">View</a>
                   </div>
                 </div>
               `).join('')}
@@ -477,7 +480,7 @@
           <section class="mb-8 fade-in">
             <div class="section-header">
               <h2 class="section-title">Latest Episodes</h2>
-              <a href="/anime" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
+              <a href="/" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               ${latestEpisodes.map(episode => `
