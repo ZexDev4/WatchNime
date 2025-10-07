@@ -19,7 +19,6 @@
       border: 1px solid rgba(55, 65, 81, 0.3);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
-
     /* Background */
     body {
       background: #111827;
@@ -27,7 +26,6 @@
       font-family: 'Inter', sans-serif;
       color: #f3f4f6;
     }
-
     /* Card Hover Effect */
     .card-hover:hover {
       transform: translateY(-8px) scale(1.01);
@@ -35,40 +33,32 @@
       border-color: #3b82f6;
       transition: all 0.2s ease;
     }
-
     /* Gradient Overlay for Cards */
     .gradient-overlay {
       background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
     }
-
     /* Animations */
     .fade-in {
       animation: fadeIn 0.4s ease-out;
     }
-
     .slide-in {
       animation: slideIn 0.3s ease-out;
     }
-
     .spinner {
       animation: spin 1s linear infinite;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-15px); }
       to { opacity: 1; transform: translateX(0); }
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     /* Badge Styling */
     .free-badge {
       background: #3b82f6;
@@ -81,66 +71,53 @@
       gap: 0.2rem;
       color: #ffffff;
     }
-
     /* Responsive Typography */
     h1 {
       font-size: clamp(2rem, 5vw, 3rem);
     }
-
     h2 {
       font-size: clamp(1.5rem, 4vw, 2rem);
     }
-
     p {
       font-size: clamp(0.875rem, 2.5vw, 1rem);
     }
-
     /* Mobile Menu */
     #mobile-menu {
       transition: transform 0.3s ease, opacity 0.3s ease;
       transform: translateY(-100%);
       opacity: 0;
     }
-
     #mobile-menu.active {
       transform: translateY(0);
       opacity: 1;
     }
-
     /* Search Input */
     .search-input {
       transition: all 0.2s ease;
       background: #1f2937;
       color: #f3f4f6;
     }
-
     .search-input:focus {
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
       border-color: #3b82f6;
     }
-
     .search-input::placeholder {
       color: #9ca3af;
     }
-
     /* Search Button */
     .search-btn {
       transition: all 0.2s ease;
     }
-
     .search-btn:hover {
       background-color: #1d4ed8;
     }
-
     /* Logo Styling */
     .logo {
       transition: transform 0.2s ease;
     }
-
     .logo:hover {
       transform: scale(1.05);
     }
-
     /* Footer */
     .footer {
       background: rgba(31, 41, 55, 0.9);
@@ -148,7 +125,6 @@
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid rgba(55, 65, 81, 0.3);
     }
-
     /* Responsive Adjustments */
     @media (max-width: 768px) {
       #menu {
@@ -205,30 +181,25 @@
     <a href="/anime" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-film mr-1"></i> Anime</a>
     <a href="/donghua" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-video mr-1"></i> Donghua</a>
   </div>
-
   <!-- Main Content -->
   <div class="container mx-auto p-4 pt-20 md:pt-24 flex-1" id="content"></div>
-
   <!-- Footer -->
   <footer class="footer w-full py-4 mt-8">
     <div class="container mx-auto text-center text-gray-400 text-sm">
       &copy; 2025 WatchNime by ZexDev
     </div>
   </footer>
-
   <script>
     // Base URL for API
     const API_BASE_URL = 'https://watch-nime-gilt.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
-
     // Toggle mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const mobileMenu = document.getElementById('mobile-menu');
       mobileMenu.classList.toggle('hidden');
       mobileMenu.classList.toggle('active');
     });
-
     // Search functionality
     function handleSearch() {
       const searchInput = document.getElementById('search-input') || document.getElementById('mobile-search-input');
@@ -243,19 +214,16 @@
         mobileMenu.classList.remove('active');
       }
     }
-
     // Desktop search
     document.getElementById('search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('desktop-search-btn')?.addEventListener('click', handleSearch);
-
     // Mobile search
     document.getElementById('mobile-search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('mobile-search-btn')?.addEventListener('click', handleSearch);
-
     // Render page based on path
     function renderPage(path) {
       const content = document.getElementById('content');
@@ -266,7 +234,6 @@
         </div>
       `;
       content.classList.add('fade-in');
-
       if (path === '/' || path === '/anime') {
         fetchAnimeList();
       } else if (path === '/donghua') {
@@ -286,7 +253,7 @@
           return;
         }
         fetchSeriesDetail(seriesId);
-      } else if (path.startsWith('/episode/') && !path.endsWith('/video')) {
+      } else if (path.startsWith('/episode/')) {
         const episodeId = path.split('/')[2];
         if (!episodeId || episodeId.trim() === '') {
           content.innerHTML = `
@@ -307,7 +274,6 @@
         `;
       }
     }
-
     // Fetch and render anime list
     function fetchAnimeList() {
       axios.get(`${API_BASE_URL}/api/anime`)
@@ -329,12 +295,12 @@
               ${episodes.map(episode => `
                 <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
                   <div class="relative">
-                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                         alt="${episode.series_title}" 
-                         class="w-full h-48 object-cover" 
-                         width="300" 
-                         height="200" 
+                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${episode.series_title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
                          loading="lazy">
                     <div class="absolute top-2 right-2 free-badge">
                       <i class="fas fa-gift"></i> Free
@@ -363,7 +329,6 @@
           `;
         });
     }
-
     // Fetch and render donghua list
     function fetchDonghuaList() {
       axios.get(`${API_BASE_URL}/api/donghua`)
@@ -385,12 +350,12 @@
               ${episodes.map(episode => `
                 <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
                   <div class="relative">
-                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}" 
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                         alt="${episode.series_title}" 
-                         class="w-full h-48 object-cover" 
-                         width="300" 
-                         height="200" 
+                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${episode.series_title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
                          loading="lazy">
                     <div class="absolute top-2 right-2 free-badge">
                       <i class="fas fa-gift"></i> Free
@@ -419,7 +384,6 @@
           `;
         });
     }
-
     // Fetch and render search results
     function fetchSearchResults(keyword) {
       axios.get(`${API_BASE_URL}/api/search`, { params: { keyword } })
@@ -432,12 +396,12 @@
               ${series.length ? series.map(item => `
                 <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
                   <div class="relative">
-                    <img src="${item.image_url || PLACEHOLDER_IMAGE}" 
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                         alt="${item.title}" 
-                         class="w-full h-48 object-cover" 
-                         width="300" 
-                         height="200" 
+                    <img src="${item.image_url || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${item.title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
                          loading="lazy">
                     <div class="absolute top-2 right-2 free-badge">
                       <i class="fas fa-gift"></i> Free
@@ -466,7 +430,6 @@
           `;
         });
     }
-
     // Fetch and render series details
     function fetchSeriesDetail(seriesId) {
       axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
@@ -486,12 +449,12 @@
           content.innerHTML = `
             <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">${series.title || 'Unknown'}</h1>
             <div class="glass rounded-xl p-6 flex flex-col md:flex-row gap-6 fade-in">
-              <img src="${series.image_url || PLACEHOLDER_IMAGE}" 
-                   onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                   alt="${series.title}" 
-                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-700" 
-                   width="400" 
-                   height="600" 
+              <img src="${series.image_url || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="${series.title}"
+                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-700"
+                   width="400"
+                   height="600"
                    loading="lazy">
               <div class="flex-1">
                 <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
@@ -509,12 +472,12 @@
               ${episodes.length ? episodes.map(episode => `
                 <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
                   <div class="relative">
-                    <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" 
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'" 
-                         alt="Episode ${episode.number}" 
-                         class="w-full h-40 object-cover" 
-                         width="300" 
-                         height="200" 
+                    <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="Episode ${episode.number}"
+                         class="w-full h-40 object-cover"
+                         width="300"
+                         height="200"
                          loading="lazy">
                     <div class="absolute top-2 right-2 free-badge">
                       <i class="fas fa-gift"></i> Free
@@ -540,7 +503,6 @@
           `;
         });
     }
-
     // Fetch and render video player
     function fetchVideo(episodeId) {
       axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
@@ -562,6 +524,8 @@
                   ${videos.map(video => `
                     <button
                       data-url="${video.streaming_url}"
+                      data-download="${video.download_url}"
+                      data-quality="${video.quality}"
                       data-id="${video.id}"
                       class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-700' : 'glass'} hover:bg-blue-800 text-white transition-colors duration-200 quality-btn slide-in"
                     >
@@ -580,19 +544,21 @@
                 <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
               </a>
             `;
-
             // Event listener for quality buttons
             document.querySelectorAll('.quality-btn').forEach(button => {
               button.addEventListener('click', () => {
                 const videoPlayer = document.getElementById('video-player');
                 const downloadLink = document.getElementById('download-link');
                 const newUrl = button.getAttribute('data-url');
-                const quality = button.textContent.split(' ')[1];
+                const newDownloadUrl = button.getAttribute('data-download');
+                const quality = button.getAttribute('data-quality');
                 videoPlayer.src = newUrl;
-                downloadLink.href = newUrl;
-                downloadLink.textContent = `Download (${quality})`;
-                document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.remove('bg-blue-700'));
-                document.querySelectorAll('.quality-btn').forEach(btn => btn.classList.add('glass'));
+                downloadLink.href = newDownloadUrl;
+                downloadLink.innerHTML = `<i class="fas fa-download mr-1"></i> Download (${quality})`;
+                document.querySelectorAll('.quality-btn').forEach(btn => {
+                  btn.classList.remove('bg-blue-700');
+                  btn.classList.add('glass');
+                });
                 button.classList.remove('glass');
                 button.classList.add('bg-blue-700');
                 videoPlayer.play();
@@ -616,7 +582,6 @@
           `;
         });
     }
-
     // Client-side routing
     function handleNavigation(event) {
       event.preventDefault();
@@ -626,7 +591,6 @@
       document.getElementById('mobile-menu').classList.add('hidden');
       document.getElementById('mobile-menu').classList.remove('active');
     }
-
     // Initialize page
     window.addEventListener('popstate', () => renderPage(window.location.pathname));
     document.addEventListener('click', event => {
