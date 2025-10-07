@@ -430,12 +430,40 @@
           `;
         });
     }
+    // Function to render episodes grid
+    function renderEpisodes(sortedEpisodes, containerId) {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = sortedEpisodes.length ? sortedEpisodes.map(episode => `
+          <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+            <div class="relative">
+              <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="Episode ${episode.number}"
+                   class="w-full h-40 object-cover"
+                   width="300"
+                   height="200"
+                   loading="lazy">
+              <div class="absolute top-2 right-2 free-badge">
+                <i class="fas fa-gift"></i> Free
+              </div>
+            </div>
+            <div class="p-4">
+              <p class="text-gray-300 font-medium">Episode ${episode.number || 'N/A'}</p>
+              <p class="text-gray-400 text-sm">Views: ${episode.views ? episode.views.toLocaleString() : 'N/A'}</p>
+              <p class="text-gray-400 text-sm">Duration: ${episode.duration_min || 'N/A'} min</p>
+              <a href="/episode/${episode.episode_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-play mr-1"></i> Watch Video</a>
+            </div>
+          </div>
+        `).join('') : '<div class="text-center text-gray-400 fade-in">No episodes available</div>';
+      }
+    }
     // Fetch and render series details
     function fetchSeriesDetail(seriesId) {
       axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
         .then(response => {
           const series = response.data.series_info || {};
-          const episodes = response.data.episodes || [];
+          let episodes = response.data.episodes || [];
           if (!series.id) {
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-500 fade-in">
@@ -445,6 +473,9 @@
             `;
             return;
           }
+          // Sort episodes by number descending (newest first) by default
+          let sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+          let currentSort = 'desc';
           const content = document.getElementById('content');
           content.innerHTML = `
             <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">${series.title || 'Unknown'}</h1>
@@ -468,31 +499,35 @@
               </div>
             </div>
             <h2 class="text-2xl md:text-3xl font-extrabold mt-10 mb-6 text-gray-100 tracking-tight fade-in">Episodes</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              ${episodes.length ? episodes.map(episode => `
-                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
-                  <div class="relative">
-                    <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}"
-                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
-                         alt="Episode ${episode.number}"
-                         class="w-full h-40 object-cover"
-                         width="300"
-                         height="200"
-                         loading="lazy">
-                    <div class="absolute top-2 right-2 free-badge">
-                      <i class="fas fa-gift"></i> Free
-                    </div>
-                  </div>
-                  <div class="p-4">
-                    <p class="text-gray-300 font-medium">Episode ${episode.number || 'N/A'}</p>
-                    <p class="text-gray-400 text-sm">Views: ${episode.views ? episode.views.toLocaleString() : 'N/A'}</p>
-                    <p class="text-gray-400 text-sm">Duration: ${episode.duration_min || 'N/A'} min</p>
-                    <a href="/episode/${episode.episode_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-play mr-1"></i> Watch Video</a>
-                  </div>
-                </div>
-              `).join('') : '<div class="text-center text-gray-400 fade-in">No episodes available</div>'}
+            <div class="flex justify-center mb-4">
+              <button id="sort-asc" class="px-4 py-2 rounded-lg text-white bg-gray-600 hover:bg-gray-500 mr-2 transition-colors duration-200">Oldest First</button>
+              <button id="sort-desc" class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-500 transition-colors duration-200">Newest First</button>
             </div>
+            <div id="episodes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
           `;
+          // Initial render
+          renderEpisodes(sortedEpisodes, 'episodes-container');
+          // Sort listeners
+          document.getElementById('sort-desc').addEventListener('click', () => {
+            if (currentSort === 'desc') return;
+            currentSort = 'desc';
+            sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('sort-asc').classList.remove('bg-blue-600');
+            document.getElementById('sort-asc').classList.add('bg-gray-600');
+            document.getElementById('sort-desc').classList.remove('bg-gray-600');
+            document.getElementById('sort-desc').classList.add('bg-blue-600');
+          });
+          document.getElementById('sort-asc').addEventListener('click', () => {
+            if (currentSort === 'asc') return;
+            currentSort = 'asc';
+            sortedEpisodes = [...episodes].sort((a, b) => (a.number || 0) - (b.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('sort-desc').classList.remove('bg-blue-600');
+            document.getElementById('sort-desc').classList.add('bg-gray-600');
+            document.getElementById('sort-asc').classList.remove('bg-gray-600');
+            document.getElementById('sort-asc').classList.add('bg-blue-600');
+          });
         })
         .catch(error => {
           document.getElementById('content').innerHTML = `
