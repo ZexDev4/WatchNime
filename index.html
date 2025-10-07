@@ -129,6 +129,76 @@
       -webkit-backdrop-filter: blur(12px);
       border-top: 1px solid rgba(55, 65, 81, 0.3);
     }
+    /* Hero Section */
+    .hero {
+      position: relative;
+      height: 60vh;
+      min-height: 400px;
+      overflow: hidden;
+      border-radius: 0 0 1rem 1rem;
+    }
+    .hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 2rem;
+    }
+    .hero-content h1 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .hero-content p {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      margin-bottom: 1.5rem;
+      max-width: 80%;
+    }
+    .hero-btn {
+      background: #3b82f6;
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .hero-btn:hover {
+      background: #1d4ed8;
+    }
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-size: clamp(1.25rem, 4vw, 2rem);
+      font-weight: bold;
+    }
+    .see-all {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .see-all:hover {
+      color: #1d4ed8;
+    }
     /* Dropdown Styling */
     .dropdown {
       position: relative;
@@ -167,6 +237,33 @@
     .dropdown-content a:last-child {
       border-radius: 0 0 0.5rem 0.5rem;
     }
+    /* Mobile Search in Home */
+    #mobile-home-search {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      #mobile-home-search {
+        display: block;
+        margin-bottom: 1.5rem;
+      }
+      .hero {
+        height: 50vh;
+        min-height: 300px;
+      }
+      .hero-overlay {
+        padding: 1.5rem;
+      }
+      #menu {
+        display: none;
+      }
+      #mobile-menu {
+        display: flex;
+        flex-direction: column;
+      }
+      .search-input {
+        width: 100%;
+      }
+    }
     /* Responsive Adjustments */
     @media (max-width: 768px) {
       #menu {
@@ -190,7 +287,7 @@
         <img src="https://raw.githubusercontent.com/ZexDev4/WatchNime/main/watchnime.png" alt="WatchNime Logo" class="h-10 md:h-12 object-contain max-w-[150px] md:max-w-[200px]">
       </a>
       <div class="flex items-center gap-3 md:gap-4">
-        <!-- Search Bar (Desktop) -->
+        <!-- Search Bar (Desktop Only) -->
         <div class="relative flex items-center gap-2 hidden md:flex">
           <div class="relative flex-1">
             <input type="text" id="search-input" placeholder="Search anime or donghua..." class="search-input pl-10 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 w-40 md:w-64">
@@ -211,15 +308,6 @@
     </div>
   </nav>
   <div id="mobile-menu" class="hidden glass p-4 mt-16 fixed w-full z-10">
-    <div class="relative mb-4 flex items-center gap-2">
-      <div class="relative flex-1">
-        <input type="text" id="mobile-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500">
-        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-      </div>
-      <button id="mobile-search-btn" class="search-btn bg-blue-700 text-white p-2.5 rounded-lg hover:bg-blue-800">
-        <i class="fas fa-search"></i>
-      </button>
-    </div>
     <a href="/anime" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-film mr-1"></i> Anime</a>
     <a href="/donghua" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-video mr-1"></i> Donghua</a>
   </div>
@@ -244,13 +332,15 @@
     });
     // Search functionality
     function handleSearch() {
-      const searchInput = document.getElementById('search-input') || document.getElementById('mobile-search-input');
+      const searchInput = document.getElementById('search-input') || 
+                          document.getElementById('mobile-search-input') || 
+                          document.getElementById('mobile-home-search-input');
       const keyword = searchInput.value.trim();
       if (keyword) {
         history.pushState(null, null, `/search/${encodeURIComponent(keyword)}`);
         renderPage(`/search/${encodeURIComponent(keyword)}`);
         searchInput.value = ''; // Clear input after search
-        // Close mobile menu after search
+        // Close mobile menu after search if open
         const mobileMenu = document.getElementById('mobile-menu');
         mobileMenu.classList.add('hidden');
         mobileMenu.classList.remove('active');
@@ -261,7 +351,7 @@
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('desktop-search-btn')?.addEventListener('click', handleSearch);
-    // Mobile search
+    // Mobile menu search (if any)
     document.getElementById('mobile-search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
@@ -276,7 +366,9 @@
         </div>
       `;
       content.classList.add('fade-in');
-      if (path === '/' || path === '/anime') {
+      if (path === '/') {
+        fetchHome();
+      } else if (path === '/anime') {
         fetchAnimeList();
       } else if (path === '/donghua') {
         fetchDonghuaList();
@@ -289,7 +381,7 @@
           content.innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Invalid series ID
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
           return;
@@ -301,7 +393,7 @@
           content.innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Invalid episode ID
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
           return;
@@ -311,10 +403,116 @@
         content.innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
             Page not found
-            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
           </div>
         `;
       }
+    }
+    // Fetch and render home page
+    function fetchHome() {
+      // Fetch anime and donghua for featured content
+      Promise.all([
+        axios.get(`${API_BASE_URL}/api/anime`),
+        axios.get(`${API_BASE_URL}/api/donghua`)
+      ]).then(([animeRes, donghuaRes]) => {
+        const animes = animeRes.data.data || [];
+        const donghuas = donghuaRes.data.data || [];
+        // Sort for trending (by views descending)
+        const trendingAnimes = [...animes].sort((a, b) => (b.total_views || 0) - (a.total_views || 0)).slice(0, 6);
+        const latestEpisodes = [...animes, ...donghuas].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0)).slice(0, 6);
+        // Featured hero (pick first trending)
+        const featured = trendingAnimes[0] || {};
+        const content = document.getElementById('content');
+        content.innerHTML = `
+          <!-- Mobile Search Bar (Visible only on mobile, above hero) -->
+          <div id="mobile-home-search" class="md:hidden">
+            <div class="relative mb-4">
+              <input type="text" id="mobile-home-search-input" placeholder="Search anime or donghua..." class="search-input w-full pl-10 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500">
+              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <button id="mobile-home-search-btn" class="search-btn bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 w-full">
+              <i class="fas fa-search mr-1"></i> Search
+            </button>
+          </div>
+          <!-- Hero Section -->
+          <section class="hero fade-in">
+            <img src="${featured.series_image || PLACEHOLDER_IMAGE}" alt="${featured.series_title || 'Featured Series'}" loading="lazy">
+            <div class="hero-overlay">
+              <div class="hero-content">
+                <h1 class="text-white">${featured.series_title || 'Featured Anime'}</h1>
+                <p class="text-gray-200">${featured.synopsis || 'Discover the latest and greatest in anime and donghua.'}</p>
+                <a href="/series/${featured.series_id || ''}" class="hero-btn"><i class="fas fa-play"></i> Watch Now</a>
+              </div>
+            </div>
+          </section>
+          <!-- Quick Navigation -->
+          <section class="my-8 fade-in">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <a href="/anime" class="glass p-4 rounded-xl text-center"><i class="fas fa-film text-2xl mb-2 block text-blue-400"></i><span>Anime</span></a>
+              <a href="/donghua" class="glass p-4 rounded-xl text-center"><i class="fas fa-video text-2xl mb-2 block text-green-400"></i><span>Donghua</span></a>
+              <a href="/search/" class="glass p-4 rounded-xl text-center md:col-span-1"><i class="fas fa-search text-2xl mb-2 block text-purple-400"></i><span>Search</span></a>
+            </div>
+          </section>
+          <!-- Trending Now -->
+          <section class="mb-8 fade-in">
+            <div class="section-header">
+              <h2 class="section-title">Trending Now</h2>
+              <a href="/anime" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              ${trendingAnimes.map(anime => `
+                <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                  <img src="${anime.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${anime.series_title}" class="w-full h-32 object-cover">
+                  <div class="p-3">
+                    <h3 class="text-sm font-semibold truncate">${anime.series_title || 'Unknown'}</h3>
+                    <p class="text-xs text-gray-400">Ep ${anime.episode_number || 'N/A'}</p>
+                    <p class="text-xs text-gray-400">Views: ${anime.total_views?.toLocaleString() || 'N/A'}</p>
+                    <a href="/series/${anime.series_id}" class="mt-2 inline-block text-blue-500 text-xs hover:underline">View</a>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+          <!-- Latest Episodes -->
+          <section class="mb-8 fade-in">
+            <div class="section-header">
+              <h2 class="section-title">Latest Episodes</h2>
+              <a href="/anime" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              ${latestEpisodes.map(episode => `
+                <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                  <img src="${episode.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${episode.series_title}" class="w-full h-32 object-cover">
+                  <div class="p-3">
+                    <h3 class="text-sm font-semibold truncate">${episode.series_title || 'Unknown'}</h3>
+                    <p class="text-xs text-gray-400">Ep ${episode.episode_number || 'N/A'}</p>
+                    <p class="text-xs text-gray-400">${episode.date_created ? new Date(episode.date_created).toLocaleDateString() : 'N/A'}</p>
+                    <a href="/episode/${episode.episode_id || ''}" class="mt-2 inline-block text-blue-500 text-xs hover:underline">Watch</a>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+        `;
+        // Mobile home search functionality
+        const mobileHomeInput = document.getElementById('mobile-home-search-input');
+        const mobileHomeBtn = document.getElementById('mobile-home-search-btn');
+        if (mobileHomeInput) {
+          mobileHomeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
+          });
+        }
+        if (mobileHomeBtn) {
+          mobileHomeBtn.addEventListener('click', handleSearch);
+        }
+      }).catch(error => {
+        document.getElementById('content').innerHTML = `
+          <div class="text-center py-10 text-red-500 fade-in">
+            Error loading home: ${error.message}
+            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Retry</a>
+          </div>
+        `;
+      });
     }
     // Fetch and render anime list
     function fetchAnimeList() {
@@ -325,7 +523,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-gray-400 fade-in">
                 No anime available
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
               </div>
             `;
             return;
@@ -366,7 +564,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Error fetching anime list: ${error.message}
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
@@ -380,7 +578,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-gray-400 fade-in">
                 No donghua available
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
               </div>
             `;
             return;
@@ -421,7 +619,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Error fetching donghua list: ${error.message}
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
@@ -467,7 +665,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Error fetching search results: ${error.message}
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
@@ -510,7 +708,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-500 fade-in">
                 Series not found
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
               </div>
             `;
             return;
@@ -589,7 +787,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Error fetching series: ${error.message}
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
@@ -659,7 +857,7 @@
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-500 fade-in">
                 No videos available
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
               </div>
             `;
           }
@@ -668,7 +866,7 @@
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
               Error fetching video: ${error.message}
-              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Anime</a>
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
