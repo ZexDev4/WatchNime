@@ -350,11 +350,22 @@
         mobileMenu.classList.remove('active');
       }
     }
-    // Desktop search
+    // Desktop search - static listeners
     document.getElementById('search-input')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('desktop-search-btn')?.addEventListener('click', handleSearch);
+    // Event delegation untuk mobile search (agar work di SPA dan mobile browser)
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'mobile-home-search-btn') {
+        handleSearch();
+      }
+    });
+    document.addEventListener('keypress', (e) => {
+      if (e.target.id === 'mobile-home-search-input' && e.key === 'Enter') {
+        handleSearch();
+      }
+    });
     // Render page based on path
     function renderPage(path) {
       const content = document.getElementById('content');
@@ -509,17 +520,7 @@
             </div>
           </section>
         `;
-        // Mobile home search functionality - pastikan event listener terpasang ulang setelah render
-        const mobileHomeInput = document.getElementById('mobile-home-search-input');
-        const mobileHomeBtn = document.getElementById('mobile-home-search-btn');
-        if (mobileHomeInput) {
-          mobileHomeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSearch();
-          });
-        }
-        if (mobileHomeBtn) {
-          mobileHomeBtn.addEventListener('click', handleSearch);
-        }
+        // Tidak perlu attach listener lagi, karena sudah pakai delegation
       }).catch(error => {
         document.getElementById('content').innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
