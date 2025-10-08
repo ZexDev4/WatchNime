@@ -6,15 +6,7 @@
       "use": "@vercel/python"
     },
     {
-      "src": "**/*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "**/*.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "**/*.css",
+      "src": "index.html",
       "use": "@vercel/static"
     }
   ],
@@ -29,7 +21,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "index.html"
     }
   ],
   "env": {
@@ -42,10 +34,6 @@
         {
           "key": "Content-Type",
           "value": "application/javascript"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
         }
       ]
     }
