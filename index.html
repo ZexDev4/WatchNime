@@ -932,13 +932,33 @@
     }
     // Fetch and render video player
     function fetchVideo(episodeId) {
-      axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
-        .then(response => {
-          const videos = response.data.data || [];
-          // Asumsi: response return episode_info dengan 'type' ('anime' atau 'donghua')
-          const episodeInfo = response.data.episode_info || { title: 'Unknown Episode', type: 'anime' }; // Fallback ke 'anime'
-          const episodeTitle = episodeInfo.title;
-          const type = episodeInfo.type; // 'anime' atau 'donghua' untuk filter latest
+      const videoUrl = `${API_BASE_URL}/api/episode/${episodeId}/video`;
+      axios.get(videoUrl)
+        .then(async (videoResponse) => {
+          const videos = videoResponse.data.data || [];
+          // Asumsi series_id ada di response video (misalnya di videoResponse.data.series_id atau videos[0].series_id)
+          // Sesuaikan dengan struktur actual API; jika tidak ada, tambah endpoint /api/episode/${episodeId} untuk info
+          let seriesId = videoResponse.data.series_id; // Atau videos[0]?.series_id jika ada
+          if (!seriesId && videos.length > 0) {
+            seriesId = videos[0].series_id; // Fallback ke videos[0]
+          }
+          // Fallback jika masih kosong (ganti dengan logic cari series_id dari /api/anime jika perlu)
+          if (!seriesId) {
+            seriesId = '1'; // Hardcode fallback - sesuaikan atau handle error
+          }
+
+          let episodeTitle = 'Unknown Episode';
+          let type = 'anime';
+
+          try {
+            const seriesResponse = await axios.get(`${API_BASE_URL}/api/series/${seriesId}`);
+            const seriesInfo = seriesResponse.data.series_info || {};
+            episodeTitle = seriesInfo.title || episodeTitle;
+            type = seriesInfo.type || type;
+          } catch (seriesError) {
+            console.warn('Failed to fetch series info:', seriesError);
+            // Lanjut dengan fallback
+          }
 
           if (videos.length > 0) {
             const defaultVideo = videos[0];
