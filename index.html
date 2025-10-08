@@ -935,6 +935,11 @@
       axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
         .then(response => {
           const videos = response.data.data || [];
+          // Asumsi: response return episode_info dengan 'type' ('anime' atau 'donghua')
+          const episodeInfo = response.data.episode_info || { title: 'Unknown Episode', type: 'anime' }; // Fallback ke 'anime'
+          const episodeTitle = episodeInfo.title;
+          const type = episodeInfo.type; // 'anime' atau 'donghua' untuk filter latest
+
           if (videos.length > 0) {
             const defaultVideo = videos[0];
             const content = document.getElementById('content');
@@ -970,6 +975,32 @@
               >
                 <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
               </a>
+
+              <!-- No.1 - Grid 4 Card Latest Episodes Sesuai Type (Anime/Donghua) -->
+              <section class="mt-8 fade-in">
+                <h2 class="text-xl md:text-2xl font-semibold text-gray-100 mb-4">Latest ${type.charAt(0).toUpperCase() + type.slice(1)} Episodes</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="latest-episodes-grid">
+                  <!-- Akan diisi oleh JS setelah fetch -->
+                  <div class="text-center text-gray-400 py-8 col-span-full">Loading latest...</div>
+                </div>
+              </section>
+
+              <!-- No.5 - Share & Social Buttons (Tetap Sama, dengan Icon Bagus) -->
+              <section class="mt-8 flex flex-wrap gap-3 justify-center fade-in">
+                <h3 class="w-full text-center text-gray-300 mb-3 font-medium">Share This Episode</h3>
+                <button onclick="shareToTwitter('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-blue-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                  <i class="fab fa-twitter text-xl text-sky-400"></i> Twitter
+                </button>
+                <button onclick="shareToDiscord('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-indigo-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                  <i class="fab fa-discord text-xl text-indigo-500"></i> Discord
+                </button>
+                <button onclick="shareToWhatsApp('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-green-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                  <i class="fab fa-whatsapp text-xl text-green-500"></i> WhatsApp
+                </button>
+                <button onclick="shareToClipboard('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center gap-2 text-white">
+                  <i class="fas fa-copy text-xl text-gray-300"></i> Copy Link
+                </button>
+              </section>
             `;
             // Event listener for quality buttons
             document.querySelectorAll('.quality-btn').forEach(button => {
@@ -991,6 +1022,59 @@
                 videoPlayer.play();
               });
             });
+
+            // Fetch dan Render Latest Episodes Sesuai Type (No.1)
+            const apiEndpoint = type === 'donghua' ? `${API_BASE_URL}/api/donghua` : `${API_BASE_URL}/api/anime`;
+            axios.get(apiEndpoint)
+              .then(latestRes => {
+                const allEpisodes = latestRes.data.data || [];
+                // Sort by date_created descending (latest first), ambil 4
+                const latestEpisodes = [...allEpisodes]
+                  .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
+                  .slice(0, 4);
+                const grid = document.getElementById('latest-episodes-grid');
+                if (latestEpisodes.length > 0) {
+                  grid.innerHTML = latestEpisodes.map(ep => `
+                    <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                      <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
+                      <div class="p-2">
+                        <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
+                        <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
+                        <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
+                      </div>
+                    </div>
+                  `).join('');
+                } else {
+                  grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
+                }
+              })
+              .catch(() => {
+                document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
+              });
+
+            // Fungsi Share (No.5)
+            window.shareToTwitter = (title) => {
+              const url = `${API_BASE_URL}${window.location.pathname}`;
+              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+            };
+            window.shareToDiscord = (title) => {
+              const url = `${API_BASE_URL}${window.location.pathname}`;
+              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+              window.open(`https://discord.com/channels/@me?content=${encodeURIComponent(text)}`, '_blank');
+            };
+            window.shareToWhatsApp = (title) => {
+              const url = `${API_BASE_URL}${window.location.pathname}`;
+              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            };
+            window.shareToClipboard = (title) => {
+              const url = `${API_BASE_URL}${window.location.pathname}`;
+              navigator.clipboard.writeText(`${title} - ${url}`).then(() => {
+                alert('Link copied to clipboard!');
+              });
+            };
+
           } else {
             document.getElementById('content').innerHTML = `
               <div class="text-center py-10 text-red-500 fade-in">
