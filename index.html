@@ -1139,11 +1139,11 @@
     renderPage(window.location.pathname);
   </script>
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then((reg) => console.log('SW registered successfully!'))
-          .catch((err) => console.log('SW registration failed:', err));
+          .then((reg) => console.log('SW registered!'))
+          .catch((err) => console.log('SW failed:', err));
       });
     }
   </script>
