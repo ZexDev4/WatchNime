@@ -7,7 +7,7 @@
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="WatchNimez - Stream Anime & Donghua Free">
   <meta property="og:description" content="Watch the latest anime and donghua episodes for free. Discover trending series, latest releases, and more.">
-  <meta property="og:image" content="https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/wtch.png">
+  <meta property="og:image" content="https://raw.githubusercontent.com/ZexDev4/WatchNime/main/watchnime.png">
   <meta property="og:url" content="https://watchnimez.vercel.app">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="WatchNimez">
@@ -15,7 +15,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="WatchNimez - Stream Anime & Donghua Free">
   <meta name="twitter:description" content="Watch the latest anime and donghua episodes for free. Discover trending series, latest releases, and more.">
-  <meta name="twitter:image" content="https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/wtch.png">
+  <meta name="twitter:image" content="https://raw.githubusercontent.com/ZexDev4/WatchNime/main/watchnime.png">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Axios CDN -->
@@ -293,6 +293,58 @@
         width: 100%;
       }
     }
+    /* Share Buttons */
+    .share-btn {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #3b82f6;
+      transition: all 0.2s ease;
+    }
+    .share-btn:hover {
+      background: #3b82f6;
+      color: white;
+    }
+    /* Episode Nav */
+    .episode-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .episode-nav-btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .episode-nav-btn.prev {
+      background: rgba(107, 114, 128, 0.2);
+      color: #9ca3af;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    .episode-nav-btn.next {
+      background: #3b82f6;
+      color: white;
+    }
+    .episode-nav-btn.prev:hover {
+      background: rgba(107, 114, 128, 0.3);
+    }
+    .episode-nav-btn.next:hover {
+      background: #1d4ed8;
+    }
+    .episode-nav-btn.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    /* Rating Stars */
+    .star {
+      color: #fbbf24;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .star:hover {
+      color: #f59e0b;
+    }
   </style>
 </head>
 <body class="text-gray-100 min-h-screen flex flex-col">
@@ -300,7 +352,7 @@
   <nav class="glass fixed top-0 left-0 right-0 z-20 p-3 md:p-4">
     <div class="container mx-auto flex justify-between items-center">
       <a href="/" class="flex items-center logo">
-        <img src="https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/watchnimez.png" alt="WatchNimez Logo" class="h-12 md:h-14 object-contain max-w-[180px] md:max-w-[220px]">
+        <img src="https://raw.githubusercontent.com/ZexDev4/WatchNime/main/wtch.png" alt="WatchNimez Logo" class="h-12 md:h-14 object-contain max-w-[180px] md:max-w-[220px]">
       </a>
       <div class="flex items-center gap-3 md:gap-4">
         <!-- Search Bar (Desktop Only) -->
@@ -932,82 +984,206 @@
     }
     // Fetch and render video player
     function fetchVideo(episodeId) {
-      axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
-        .then(response => {
-          const videos = response.data.data || [];
-          if (videos.length > 0) {
-            const defaultVideo = videos[0];
-            const content = document.getElementById('content');
-            content.innerHTML = `
-              <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Watch Episode</h1>
-              <div class="glass rounded-xl p-4 mb-6 fade-in">
-                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-700" src="${defaultVideo.streaming_url}">
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-              <div class="mb-6">
-                <h2 class="text-xl md:text-2xl font-semibold text-gray-100 fade-in">Available Qualities</h2>
-                <div class="flex flex-wrap gap-3 mt-3" id="quality-buttons">
-                  ${videos.map(video => `
-                    <button
-                      data-url="${video.streaming_url}"
-                      data-download="${video.download_url}"
-                      data-quality="${video.quality}"
-                      data-id="${video.id}"
-                      class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-700' : 'glass'} hover:bg-blue-800 text-white transition-colors duration-200 quality-btn slide-in"
+      // Fetch episode details including series info and episodes list
+      axios.get(`${API_BASE_URL}/api/episode/${episodeId}`)
+        .then(episodeRes => {
+          const episode = episodeRes.data.episode || {};
+          const series = episode.series_info || {};
+          const allEpisodes = episode.episodes || [];
+          const currentIndex = allEpisodes.findIndex(e => e.episode_id === episodeId);
+          const prevEpisode = currentIndex > 0 ? allEpisodes[currentIndex - 1] : null;
+          const nextEpisode = currentIndex < allEpisodes.length - 1 ? allEpisodes[currentIndex + 1] : null;
+
+          // Fetch videos
+          axios.get(`${API_BASE_URL}/api/episode/${episodeId}/video`)
+            .then(videoRes => {
+              const videos = videoRes.data.data || [];
+              if (videos.length > 0) {
+                const defaultVideo = videos[0];
+                // Fetch latest for recommendations based on genre
+                Promise.all([
+                  axios.get(`${API_BASE_URL}/api/anime`),
+                  axios.get(`${API_BASE_URL}/api/donghua`)
+                ]).then(([animeRes, donghuaRes]) => {
+                  const animes = animeRes.data.data || [];
+                  const donghuas = donghuaRes.data.data || [];
+                  const allLatest = [...animes, ...donghuas].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0));
+                  // Filter by shared genre (take first genre for simplicity)
+                  const sharedGenre = series.genres && series.genres.length > 0 ? series.genres[0] : '';
+                  const recommendations = allLatest.filter(s => s.genres && s.genres.includes(sharedGenre)).slice(0, 4);
+                  const content = document.getElementById('content');
+                  content.innerHTML = `
+                    <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Watch Episode ${episode.number || 'N/A'} - ${series.title || 'Unknown'}</h1>
+                    <div class="glass rounded-xl p-4 mb-6 fade-in">
+                      <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-700" src="${defaultVideo.streaming_url}">
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                    <!-- Episode Navigation (No.1) -->
+                    <div class="episode-nav mb-6 fade-in">
+                      <a href="/episode/${prevEpisode ? prevEpisode.episode_id : ''}" class="episode-nav-btn prev ${!prevEpisode ? 'disabled' : ''}">
+                        <i class="fas fa-chevron-left mr-1"></i> Episode ${prevEpisode ? prevEpisode.number : 'N/A'}
+                      </a>
+                      <a href="/series/${series.series_id || ''}" class="episode-nav-btn next">
+                        <i class="fas fa-list mr-1"></i> All Episodes
+                      </a>
+                      <a href="/episode/${nextEpisode ? nextEpisode.episode_id : ''}" class="episode-nav-btn next ${!nextEpisode ? 'disabled' : ''}">
+                        Episode ${nextEpisode ? nextEpisode.number : 'N/A'} <i class="fas fa-chevron-right mr-1"></i>
+                      </a>
+                    </div>
+                    <!-- Synopsis and Rating (No.5) -->
+                    <div class="glass rounded-xl p-4 mb-6 fade-in">
+                      <h2 class="text-xl font-semibold mb-3">Episode Synopsis</h2>
+                      <p class="text-gray-300 mb-4">${episode.synopsis || series.synopsis || 'No synopsis available.'}</p>
+                      <div class="flex items-center justify-between">
+                        <span class="text-gray-400">Rate this episode:</span>
+                        <div class="flex gap-1">
+                          ${[1,2,3,4,5].map(star => `<i class="fas fa-star star" data-rating="${star}"></i>`).join('')}
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Available Qualities -->
+                    <div class="mb-6">
+                      <h2 class="text-xl md:text-2xl font-semibold text-gray-100 fade-in">Available Qualities</h2>
+                      <div class="flex flex-wrap gap-3 mt-3" id="quality-buttons">
+                        ${videos.map(video => `
+                          <button
+                            data-url="${video.streaming_url}"
+                            data-download="${video.download_url}"
+                            data-quality="${video.quality}"
+                            data-id="${video.id}"
+                            class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-700' : 'glass'} hover:bg-blue-800 text-white transition-colors duration-200 quality-btn slide-in"
+                          >
+                            <i class="fas fa-video mr-1"></i> ${video.quality} (${video.file_size} MB)
+                          </button>
+                        `).join('')}
+                      </div>
+                    </div>
+                    <a
+                      href="${defaultVideo.download_url}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      id="download-link"
+                      class="inline-block bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors duration-200 slide-in"
                     >
-                      <i class="fas fa-video mr-1"></i> ${video.quality} (${video.file_size} MB)
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-              <a
-                href="${defaultVideo.download_url}"
-                target="_blank"
-                rel="noopener noreferrer"
-                id="download-link"
-                class="inline-block bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors duration-200 slide-in"
-              >
-                <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
-              </a>
-            `;
-            // Event listener for quality buttons
-            document.querySelectorAll('.quality-btn').forEach(button => {
-              button.addEventListener('click', () => {
-                const videoPlayer = document.getElementById('video-player');
-                const downloadLink = document.getElementById('download-link');
-                const newUrl = button.getAttribute('data-url');
-                const newDownloadUrl = button.getAttribute('data-download');
-                const quality = button.getAttribute('data-quality');
-                videoPlayer.src = newUrl;
-                downloadLink.href = newDownloadUrl;
-                downloadLink.innerHTML = `<i class="fas fa-download mr-1"></i> Download (${quality})`;
-                document.querySelectorAll('.quality-btn').forEach(btn => {
-                  btn.classList.remove('bg-blue-700');
-                  btn.classList.add('glass');
+                      <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
+                    </a>
+                    <!-- Recommendations (No.2) -->
+                    <section class="mt-8 fade-in">
+                      <h2 class="text-xl md:text-2xl font-semibold text-gray-100 mb-4">Recommended (Latest in ${sharedGenre})</h2>
+                      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        ${recommendations.map(rec => `
+                          <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                            <img src="${rec.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${rec.series_title}" class="w-full h-32 object-cover">
+                            <div class="p-3">
+                              <h3 class="text-sm font-semibold truncate">${rec.series_title || 'Unknown'}</h3>
+                              <p class="text-xs text-gray-400">Ep ${rec.episode_number || 'N/A'}</p>
+                              <a href="/series/${rec.series_id}" class="mt-2 inline-block text-blue-500 text-xs hover:underline">View</a>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </section>
+                    <!-- Share Buttons (No.3) -->
+                    <section class="mt-8 fade-in">
+                      <h2 class="text-xl font-semibold text-gray-100 mb-4">Share this episode</h2>
+                      <div class="flex gap-3 justify-center">
+                        <button class="share-btn p-3 rounded-lg" onclick="shareToFacebook()">
+                          <i class="fab fa-facebook-f text-lg"></i>
+                        </button>
+                        <button class="share-btn p-3 rounded-lg" onclick="shareToTwitter()">
+                          <i class="fab fa-twitter text-lg"></i>
+                        </button>
+                        <button class="share-btn p-3 rounded-lg" onclick="shareToWhatsapp()">
+                          <i class="fab fa-whatsapp text-lg"></i>
+                        </button>
+                        <button class="share-btn p-3 rounded-lg" onclick="copyLink()">
+                          <i class="fas fa-copy text-lg"></i>
+                        </button>
+                      </div>
+                    </section>
+                  `;
+                  // Event listener for quality buttons
+                  document.querySelectorAll('.quality-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                      const videoPlayer = document.getElementById('video-player');
+                      const downloadLink = document.getElementById('download-link');
+                      const newUrl = button.getAttribute('data-url');
+                      const newDownloadUrl = button.getAttribute('data-download');
+                      const quality = button.getAttribute('data-quality');
+                      videoPlayer.src = newUrl;
+                      downloadLink.href = newDownloadUrl;
+                      downloadLink.innerHTML = `<i class="fas fa-download mr-1"></i> Download (${quality})`;
+                      document.querySelectorAll('.quality-btn').forEach(btn => {
+                        btn.classList.remove('bg-blue-700');
+                        btn.classList.add('glass');
+                      });
+                      button.classList.remove('glass');
+                      button.classList.add('bg-blue-700');
+                      videoPlayer.play();
+                    });
+                  });
+                  // Rating stars listener
+                  document.querySelectorAll('.star').forEach(star => {
+                    star.addEventListener('click', () => {
+                      const rating = star.dataset.rating;
+                      // Simple alert for now; can integrate with API later
+                      alert(`Rated ${rating}/5 stars!`);
+                      // Update visual: highlight up to clicked star
+                      document.querySelectorAll('.star').forEach((s, i) => {
+                        s.classList.toggle('text-yellow-400', i < rating);
+                      });
+                    });
+                  });
+                }).catch(() => {
+                  // Fallback if recommendations fail
+                  console.error('Failed to fetch recommendations');
                 });
-                button.classList.remove('glass');
-                button.classList.add('bg-blue-700');
-                videoPlayer.play();
-              });
+              } else {
+                document.getElementById('content').innerHTML = `
+                  <div class="text-center py-10 text-red-500 fade-in">
+                    No videos available
+                    <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+                  </div>
+                `;
+              }
+            }).catch(error => {
+              document.getElementById('content').innerHTML = `
+                <div class="text-center py-10 text-red-500 fade-in">
+                  Error fetching video: ${error.message}
+                  <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+                </div>
+              `;
             });
-          } else {
-            document.getElementById('content').innerHTML = `
-              <div class="text-center py-10 text-red-500 fade-in">
-                No videos available
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
-              </div>
-            `;
-          }
-        })
-        .catch(error => {
+        }).catch(error => {
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
-              Error fetching video: ${error.message}
+              Error fetching episode details: ${error.message}
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
         });
+    }
+    // Share functions
+    function shareToFacebook() {
+      const url = encodeURIComponent(window.location.href);
+      const title = encodeURIComponent(document.title);
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    }
+    function shareToTwitter() {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent(`Watching ${document.title} on WatchNimez!`);
+      window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+    }
+    function shareToWhatsapp() {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent(`Check out this episode on WatchNimez: ${document.title}`);
+      window.open(`https://wa.me/?text=${text} ${url}`, '_blank');
+    }
+    function copyLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Link copied to clipboard!');
+      });
     }
     // Client-side routing
     function handleNavigation(event) {
