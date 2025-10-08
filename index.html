@@ -933,185 +933,192 @@
     // Fetch and render video player
     function fetchVideo(episodeId) {
       const videoUrl = `${API_BASE_URL}/api/episode/${episodeId}/video`;
-      axios.get(videoUrl)
-        .then(async (videoResponse) => {
-          const videos = videoResponse.data.data || [];
-          // Asumsi series_id ada di response video (misalnya di videoResponse.data.series_id atau videos[0].series_id)
-          // Sesuaikan dengan struktur actual API; jika tidak ada, tambah endpoint /api/episode/${episodeId} untuk info
-          let seriesId = videoResponse.data.series_id; // Atau videos[0]?.series_id jika ada
-          if (!seriesId && videos.length > 0) {
-            seriesId = videos[0].series_id; // Fallback ke videos[0]
-          }
-          // Fallback jika masih kosong (ganti dengan logic cari series_id dari /api/anime jika perlu)
-          if (!seriesId) {
-            seriesId = '1'; // Hardcode fallback - sesuaikan atau handle error
-          }
-
-          let episodeTitle = 'Unknown Episode';
-          let type = 'anime';
-
-          try {
-            const seriesResponse = await axios.get(`${API_BASE_URL}/api/series/${seriesId}`);
-            const seriesInfo = seriesResponse.data.series_info || {};
-            episodeTitle = seriesInfo.title || episodeTitle;
-            type = seriesInfo.type || type;
-          } catch (seriesError) {
-            console.warn('Failed to fetch series info:', seriesError);
-            // Lanjut dengan fallback
-          }
-
-          if (videos.length > 0) {
-            const defaultVideo = videos[0];
-            const content = document.getElementById('content');
-            content.innerHTML = `
-              <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Watch Episode</h1>
-              <div class="glass rounded-xl p-4 mb-6 fade-in">
-                <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-700" src="${defaultVideo.streaming_url}">
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-              <div class="mb-6">
-                <h2 class="text-xl md:text-2xl font-semibold text-gray-100 fade-in">Available Qualities</h2>
-                <div class="flex flex-wrap gap-3 mt-3" id="quality-buttons">
-                  ${videos.map(video => `
-                    <button
-                      data-url="${video.streaming_url}"
-                      data-download="${video.download_url}"
-                      data-quality="${video.quality}"
-                      data-id="${video.id}"
-                      class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-700' : 'glass'} hover:bg-blue-800 text-white transition-colors duration-200 quality-btn slide-in"
-                    >
-                      <i class="fas fa-video mr-1"></i> ${video.quality} (${video.file_size} MB)
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-              <a
-                href="${defaultVideo.download_url}"
-                target="_blank"
-                rel="noopener noreferrer"
-                id="download-link"
-                class="inline-block bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors duration-200 slide-in"
-              >
-                <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
-              </a>
-
-              <!-- No.1 - Grid 4 Card Latest Episodes Sesuai Type (Anime/Donghua) -->
-              <section class="mt-8 fade-in">
-                <h2 class="text-xl md:text-2xl font-semibold text-gray-100 mb-4">Latest ${type.charAt(0).toUpperCase() + type.slice(1)} Episodes</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="latest-episodes-grid">
-                  <!-- Akan diisi oleh JS setelah fetch -->
-                  <div class="text-center text-gray-400 py-8 col-span-full">Loading latest...</div>
-                </div>
-              </section>
-
-              <!-- No.5 - Share & Social Buttons (Tetap Sama, dengan Icon Bagus) -->
-              <section class="mt-8 flex flex-wrap gap-3 justify-center fade-in">
-                <h3 class="w-full text-center text-gray-300 mb-3 font-medium">Share This Episode</h3>
-                <button onclick="shareToTwitter('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-blue-800 transition-colors duration-200 flex items-center gap-2 text-white">
-                  <i class="fab fa-twitter text-xl text-sky-400"></i> Twitter
-                </button>
-                <button onclick="shareToDiscord('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-indigo-800 transition-colors duration-200 flex items-center gap-2 text-white">
-                  <i class="fab fa-discord text-xl text-indigo-500"></i> Discord
-                </button>
-                <button onclick="shareToWhatsApp('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-green-800 transition-colors duration-200 flex items-center gap-2 text-white">
-                  <i class="fab fa-whatsapp text-xl text-green-500"></i> WhatsApp
-                </button>
-                <button onclick="shareToClipboard('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center gap-2 text-white">
-                  <i class="fas fa-copy text-xl text-gray-300"></i> Copy Link
-                </button>
-              </section>
-            `;
-            // Event listener for quality buttons
-            document.querySelectorAll('.quality-btn').forEach(button => {
-              button.addEventListener('click', () => {
-                const videoPlayer = document.getElementById('video-player');
-                const downloadLink = document.getElementById('download-link');
-                const newUrl = button.getAttribute('data-url');
-                const newDownloadUrl = button.getAttribute('data-download');
-                const quality = button.getAttribute('data-quality');
-                videoPlayer.src = newUrl;
-                downloadLink.href = newDownloadUrl;
-                downloadLink.innerHTML = `<i class="fas fa-download mr-1"></i> Download (${quality})`;
-                document.querySelectorAll('.quality-btn').forEach(btn => {
-                  btn.classList.remove('bg-blue-700');
-                  btn.classList.add('glass');
-                });
-                button.classList.remove('glass');
-                button.classList.add('bg-blue-700');
-                videoPlayer.play();
-              });
-            });
-
-            // Fetch dan Render Latest Episodes Sesuai Type (No.1)
-            const apiEndpoint = type === 'donghua' ? `${API_BASE_URL}/api/donghua` : `${API_BASE_URL}/api/anime`;
-            axios.get(apiEndpoint)
-              .then(latestRes => {
-                const allEpisodes = latestRes.data.data || [];
-                // Sort by date_created descending (latest first), ambil 4
-                const latestEpisodes = [...allEpisodes]
-                  .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
-                  .slice(0, 4);
-                const grid = document.getElementById('latest-episodes-grid');
-                if (latestEpisodes.length > 0) {
-                  grid.innerHTML = latestEpisodes.map(ep => `
-                    <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
-                      <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
-                      <div class="p-2">
-                        <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
-                        <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
-                        <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
-                      </div>
-                    </div>
-                  `).join('');
-                } else {
-                  grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
-                }
-              })
-              .catch(() => {
-                document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
-              });
-
-            // Fungsi Share (No.5)
-            window.shareToTwitter = (title) => {
-              const url = `${API_BASE_URL}${window.location.pathname}`;
-              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
-              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-            };
-            window.shareToDiscord = (title) => {
-              const url = `${API_BASE_URL}${window.location.pathname}`;
-              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
-              window.open(`https://discord.com/channels/@me?content=${encodeURIComponent(text)}`, '_blank');
-            };
-            window.shareToWhatsApp = (title) => {
-              const url = `${API_BASE_URL}${window.location.pathname}`;
-              const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
-              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-            };
-            window.shareToClipboard = (title) => {
-              const url = `${API_BASE_URL}${window.location.pathname}`;
-              navigator.clipboard.writeText(`${title} - ${url}`).then(() => {
-                alert('Link copied to clipboard!');
-              });
-            };
-
-          } else {
-            document.getElementById('content').innerHTML = `
-              <div class="text-center py-10 text-red-500 fade-in">
-                No videos available
-                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
-              </div>
-            `;
-          }
-        })
-        .catch(error => {
+      const animeUrl = `${API_BASE_URL}/api/anime`;
+      const donghuaUrl = `${API_BASE_URL}/api/donghua`;
+      Promise.all([
+        axios.get(videoUrl),
+        axios.get(animeUrl),
+        axios.get(donghuaUrl)
+      ]).then(async ([videoRes, animeRes, donghuaRes]) => {
+        const videos = videoRes.data.data || [];
+        const animes = animeRes.data.data || [];
+        const donghuas = donghuaRes.data.data || [];
+        // Cari episode match berdasarkan episode_id
+        const episodeMatch = [...animes, ...donghuas].find(ep => ep.episode_id === episodeId);
+        if (!episodeMatch) {
           document.getElementById('content').innerHTML = `
             <div class="text-center py-10 text-red-500 fade-in">
-              Error fetching video: ${error.message}
+              Episode not found
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
-        });
+          return;
+        }
+        const seriesId = episodeMatch.series_id;
+        const tempTitle = episodeMatch.series_title;
+        // Tentukan type berdasarkan endpoint mana yang match
+        const type = animes.some(ep => ep.episode_id === episodeId) ? 'anime' : 'donghua';
+        let episodeTitle = tempTitle;
+        // Fetch series untuk title final (dari series_info.title)
+        try {
+          const seriesRes = await axios.get(`${API_BASE_URL}/api/series/${seriesId}`);
+          const seriesInfo = seriesRes.data.series_info || {};
+          episodeTitle = seriesInfo.title || tempTitle;
+        } catch (seriesError) {
+          console.warn('Failed to fetch series info:', seriesError);
+          // Lanjut dengan tempTitle
+        }
+        if (videos.length > 0) {
+          const defaultVideo = videos[0];
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Watch Episode</h1>
+            <div class="glass rounded-xl p-4 mb-6 fade-in">
+              <video id="video-player" controls class="w-full max-w-4xl mx-auto rounded-xl border border-gray-700" src="${defaultVideo.streaming_url}">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <div class="mb-6">
+              <h2 class="text-xl md:text-2xl font-semibold text-gray-100 fade-in">Available Qualities</h2>
+              <div class="flex flex-wrap gap-3 mt-3" id="quality-buttons">
+                ${videos.map(video => `
+                  <button
+                    data-url="${video.streaming_url}"
+                    data-download="${video.download_url}"
+                    data-quality="${video.quality}"
+                    data-id="${video.id}"
+                    class="px-4 py-2 rounded-lg ${video.id === defaultVideo.id ? 'bg-blue-700' : 'glass'} hover:bg-blue-800 text-white transition-colors duration-200 quality-btn slide-in"
+                  >
+                    <i class="fas fa-video mr-1"></i> ${video.quality} (${video.file_size} MB)
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+            <a
+              href="${defaultVideo.download_url}"
+              target="_blank"
+              rel="noopener noreferrer"
+              id="download-link"
+              class="inline-block bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors duration-200 slide-in"
+            >
+              <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
+            </a>
+
+            <!-- No.1 - Grid 4 Card Latest Episodes Sesuai Type (Anime/Donghua) -->
+            <section class="mt-8 fade-in">
+              <h2 class="text-xl md:text-2xl font-semibold text-gray-100 mb-4">Latest ${type.charAt(0).toUpperCase() + type.slice(1)} Episodes</h2>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="latest-episodes-grid">
+                <!-- Akan diisi oleh JS setelah fetch -->
+                <div class="text-center text-gray-400 py-8 col-span-full">Loading latest...</div>
+              </div>
+            </section>
+
+            <!-- No.5 - Share & Social Buttons (Tetap Sama, dengan Icon Bagus) -->
+            <section class="mt-8 flex flex-wrap gap-3 justify-center fade-in">
+              <h3 class="w-full text-center text-gray-300 mb-3 font-medium">Share This Episode</h3>
+              <button onclick="shareToTwitter('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-blue-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                <i class="fab fa-twitter text-xl text-sky-400"></i> Twitter
+              </button>
+              <button onclick="shareToDiscord('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-indigo-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                <i class="fab fa-discord text-xl text-indigo-500"></i> Discord
+              </button>
+              <button onclick="shareToWhatsApp('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-green-800 transition-colors duration-200 flex items-center gap-2 text-white">
+                <i class="fab fa-whatsapp text-xl text-green-500"></i> WhatsApp
+              </button>
+              <button onclick="shareToClipboard('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center gap-2 text-white">
+                <i class="fas fa-copy text-xl text-gray-300"></i> Copy Link
+              </button>
+            </section>
+          `;
+          // Event listener for quality buttons
+          document.querySelectorAll('.quality-btn').forEach(button => {
+            button.addEventListener('click', () => {
+              const videoPlayer = document.getElementById('video-player');
+              const downloadLink = document.getElementById('download-link');
+              const newUrl = button.getAttribute('data-url');
+              const newDownloadUrl = button.getAttribute('data-download');
+              const quality = button.getAttribute('data-quality');
+              videoPlayer.src = newUrl;
+              downloadLink.href = newDownloadUrl;
+              downloadLink.innerHTML = `<i class="fas fa-download mr-1"></i> Download (${quality})`;
+              document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-700');
+                btn.classList.add('glass');
+              });
+              button.classList.remove('glass');
+              button.classList.add('bg-blue-700');
+              videoPlayer.play();
+            });
+          });
+
+          // Fetch dan Render Latest Episodes Sesuai Type (No.1)
+          const apiEndpoint = type === 'donghua' ? `${API_BASE_URL}/api/donghua` : `${API_BASE_URL}/api/anime`;
+          axios.get(apiEndpoint)
+            .then(latestRes => {
+              const allEpisodes = latestRes.data.data || [];
+              // Sort by date_created descending (latest first), ambil 4
+              const latestEpisodes = [...allEpisodes]
+                .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
+                .slice(0, 4);
+              const grid = document.getElementById('latest-episodes-grid');
+              if (latestEpisodes.length > 0) {
+                grid.innerHTML = latestEpisodes.map(ep => `
+                  <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                    <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
+                    <div class="p-2">
+                      <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
+                      <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
+                      <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
+                    </div>
+                  </div>
+                `).join('');
+              } else {
+                grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
+              }
+            })
+            .catch(() => {
+              document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
+            });
+
+          // Fungsi Share (No.5)
+          window.shareToTwitter = (title) => {
+            const url = `${API_BASE_URL}${window.location.pathname}`;
+            const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+          };
+          window.shareToDiscord = (title) => {
+            const url = `${API_BASE_URL}${window.location.pathname}`;
+            const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+            window.open(`https://discord.com/channels/@me?content=${encodeURIComponent(text)}`, '_blank');
+          };
+          window.shareToWhatsApp = (title) => {
+            const url = `${API_BASE_URL}${window.location.pathname}`;
+            const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          };
+          window.shareToClipboard = (title) => {
+            const url = `${API_BASE_URL}${window.location.pathname}`;
+            navigator.clipboard.writeText(`${title} - ${url}`).then(() => {
+              alert('Link copied to clipboard!');
+            });
+          };
+
+        } else {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              No videos available for this episode
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        }
+      }).catch(error => {
+        document.getElementById('content').innerHTML = `
+          <div class="text-center py-10 text-red-500 fade-in">
+            Error fetching video: ${error.message}
+            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+          </div>
+        `;
+      });
     }
     // Client-side routing
     function handleNavigation(event) {
