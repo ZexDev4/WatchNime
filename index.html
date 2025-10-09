@@ -22,8 +22,32 @@
   <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
   <!-- Font Awesome CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Social Bar Ad Script -->
+  
+  <!-- AdSense Script (Ganti dengan client ID kamu: ca-pub-XXXXXXXXXXXXXXXX) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  
+  <!-- Detect AdBlock Bait Content (Hidden Div untuk Test Blocker) -->
+  <style>
+    #ad-test { width: 1px; height: 1px; position: absolute; top: -10000px; }
+  </style>
+  <div id="ad-test">
+    <img src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" onerror="this.style.display='none'" style="display:none;">
+  </div>
+
+  <!-- Gaya untuk Modal Prompt (Jika Blocker Detected) -->
+  <style>
+    #adblock-modal {
+      display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    }
+    #adblock-modal.show { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: rgba(31,41,55,0.95); border-radius: 1rem; padding: 2rem; text-align: center; max-width: 400px; color: white; }
+    .native-ad { background: #3b82f6; color: white; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; text-decoration: none; display: inline-block; }
+    .native-ad:hover { background: #1d4ed8; }
+  </style>
+
+  <!-- Social Bar Ad Script (Fallback jika AdSense gagal) -->
   <script type='text/javascript' src='//pl27811413.effectivegatecpm.com/da/89/71/da897172a45410e2b591813d50c8dd8b.js'></script>
+  
   <style>
     /* Glassmorphism Effect */
     .glass {
@@ -339,8 +363,30 @@
     <a href="/anime" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-film mr-1"></i> Anime</a>
     <a href="/donghua" class="block text-gray-100 hover:text-blue-500 transition-colors duration-200 py-2 slide-in"><i class="fas fa-video mr-1"></i> Donghua</a>
   </div>
+  <!-- Modal untuk AdBlock Prompt -->
+  <div id="adblock-modal">
+    <div class="modal-content">
+      <h2><i class="fas fa-exclamation-triangle text-yellow-500"></i> Ad Blocker Detected!</h2>
+      <p class="mt-4">Iklan mendukung situs gratis ini. Nonaktifkan ad blocker untuk pengalaman terbaik, atau lihat iklan native di bawah.</p>
+      <button onclick="disableAdBlockPrompt()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 mr-2">Disable Blocker</button>
+      <button onclick="closeAdBlockModal()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Lanjutkan</button>
+      <a href="#" class="native-ad mt-4 block"><i class="fas fa-star"></i> Sponsored: Nonton Anime Premium di Partner Kami!</a>
+    </div>
+  </div>
   <!-- Main Content -->
   <div class="container mx-auto p-4 pt-20 md:pt-24 flex-1" id="content"></div>
+  <!-- AdSense Banner (Fallback Non-Intrusive Ad) -->
+  <div class="container mx-auto p-4 text-center" id="adsense-banner" style="display: none;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="XXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
   <!-- Footer -->
   <footer class="footer w-full py-4 mt-8">
     <div class="container mx-auto text-center text-gray-400 text-sm">
@@ -348,16 +394,47 @@
     </div>
   </footer>
   <script>
-    // Alert untuk pembuat website tentang iklan
+    // Detect AdBlock Function (Bait Technique)
+    function detectAdBlock() {
+      const adTest = document.getElementById('ad-test');
+      if (!adTest || adTest.innerHTML === '') {
+        return true; // Blocker detected
+      }
+      return false;
+    }
+
+    // Handle Detection
     window.addEventListener('load', () => {
-      alert("Website ini berisi iklan. Pembuat website agar bisa update selalu.");
+      if (detectAdBlock()) {
+        document.getElementById('adblock-modal').classList.add('show');
+        document.getElementById('adsense-banner').style.display = 'block'; // Show fallback ad
+        // Alert lama kamu (opsional)
+        alert("Website ini berisi iklan. Pembuat website agar bisa update selalu.");
+      } else {
+        // Load iklan normal jika no blocker
+        setTimeout(() => {
+          // Ganti popunder lama dengan AdSense auto-ads jika perlu
+          console.log('No blocker: Ads loading normally');
+        }, 5000);
+      }
     });
 
-    // Load Popunder Ad dengan delay 15 detik
+    // Fungsi untuk Modal
+    function disableAdBlockPrompt() {
+      alert('Refresh halaman setelah disable ad blocker!');
+      window.location.reload();
+    }
+    function closeAdBlockModal() {
+      document.getElementById('adblock-modal').classList.remove('show');
+    }
+
+    // Load Popunder Ad dengan delay 15 detik (Fallback jika AdSense gagal)
     setTimeout(() => {
       const script = document.createElement('script');
       script.type = 'text/javascript';
       script.src = '//pl27811428.effectivegatecpm.com/9a/41/92/9a41929a094afe577e739644c4fb6aab.js';
+      script.onerror = () => console.log('Fallback ad script failed to load');
+      script.onload = () => console.log('Fallback ad script loaded successfully');
       document.body.appendChild(script);
     }, 15000);
 
