@@ -311,25 +311,6 @@
       opacity: 0 !important;
       display: none !important;
     }
-    
-    /* ADS MOD: Styling untuk Native Ads (jika dipakai) */
-    .adsterra-native {
-      min-height: 200px;
-      background: rgba(31, 41, 55, 0.9);
-      border: 1px solid rgba(55, 65, 81, 0.3);
-      border-radius: 0.5rem;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #f3f4f6;
-      text-align: center;
-      transition: all 0.2s ease;
-    }
-    .adsterra-native:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    }
   </style>
 </head>
 <body class="text-gray-100 min-h-screen flex flex-col">
@@ -383,27 +364,11 @@
     </div>
   </footer>
   
-  <!-- ADS MOD: Native Ads Script (placeholder - ganti YOUR_NATIVE_ZONE_ID_HERE kalau dipakai) -->
-  <script async src="https://adsterra.com/native.js?zone=YOUR_NATIVE_ZONE_ID_HERE"></script>
-  
   <script>
     // Base URL for API
     const API_BASE_URL = 'https://watchnimez.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
-    // ADS MOD: Fungsi untuk insert Native Ad di grid (setiap 4 item)
-    function insertNativeAd(items, gridClass) {
-      if (!items.length) return items;
-      const adItems = [...items];
-      // Sisip ad setiap 4 item (index 3, 7, dst.)
-      for (let i = 3; i < adItems.length; i += 4) {
-        adItems.splice(i, 0, {
-          isAd: true,
-          adHtml: '<div id="adsterra-native-zone" class="adsterra-native card-hover"><p class="text-sm">Sponsored Content</p></div>'
-        });
-      }
-      return adItems;
-    }
     // Toggle mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const mobileMenu = document.getElementById('mobile-menu');
@@ -515,7 +480,7 @@
         `;
       }
     }
-    // Fetch and render home page (dengan Native Ad integration)
+    // Fetch and render home page
     function fetchHome() {
       Promise.all([
         axios.get(`${API_BASE_URL}/api/anime`),
@@ -526,9 +491,6 @@
         const allSeries = [...animes, ...donghuas];
         const trending = [...allSeries].sort((a, b) => (b.total_views || 0) - (a.total_views || 0)).slice(0, 6);
         const latestEpisodes = [...allSeries].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0)).slice(0, 6);
-        // ADS MOD: Insert Native Ad
-        const trendingWithAd = insertNativeAd(trending, 'trending-grid');
-        const latestWithAd = insertNativeAd(latestEpisodes, 'latest-grid');
         const featured = trending[0] || {};
         const content = document.getElementById('content');
         content.innerHTML = `
@@ -557,8 +519,8 @@
               <h2 class="section-title">Trending Now</h2>
               <a href="/trending" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="trending-grid">
-              ${trendingWithAd.map(series => series.isAd ? series.adHtml : `
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              ${trending.map(series => `
                 <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
                   <img src="${series.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${series.series_title}" class="w-full h-32 object-cover">
                   <div class="p-3">
@@ -577,8 +539,8 @@
               <h2 class="section-title">Latest Episodes</h2>
               <a href="/latest" class="see-all"><i class="fas fa-arrow-right mr-1"></i> See All</a>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="latest-grid">
-              ${latestWithAd.map(episode => episode.isAd ? episode.adHtml : `
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              ${latestEpisodes.map(episode => `
                 <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
                   <img src="${episode.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${episode.series_title}" class="w-full h-32 object-cover">
                   <div class="p-3">
@@ -601,14 +563,114 @@
         `;
       });
     }
-    // Function to render episodes grid (dengan ad support)
+    // Fetch and render series details
+    function fetchSeriesDetail(seriesId) {
+      axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
+        .then(response => {
+          const series = response.data.series_info || {};
+          let episodes = response.data.episodes || [];
+          if (!series.id) {
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-red-500 fade-in">
+                Series not found
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+              </div>
+            `;
+            return;
+          }
+          // Sort episodes by number descending (newest first) by default
+          let sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+          let currentSort = 'desc';
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">${series.title || 'Unknown'}</h1>
+            <div class="glass rounded-xl p-6 flex flex-col md:flex-row gap-6 fade-in">
+              <img src="${series.image_url || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="${series.title}"
+                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-700"
+                   width="400"
+                   height="600"
+                   loading="lazy">
+              <div class="flex-1">
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Type:</strong> ${series.type || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Status:</strong> ${series.status || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Season:</strong> ${series.season || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Studio:</strong> ${series.studio || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Genres:</strong> ${series.genres && series.genres.length ? series.genres.join(', ') : 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Latest Episode:</strong> ${series.latest_episode || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Rating:</strong> ${series.rating || 'N/A'}</p>
+              </div>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-extrabold mt-10 mb-6 text-gray-100 tracking-tight fade-in">Episodes</h2>
+            <div class="flex justify-center mb-4">
+              <div class="dropdown">
+                <button id="filter-toggle" class="px-4 py-2 rounded-lg text-white bg-gray-600 hover:bg-gray-500 transition-colors duration-200">
+                  <i class="fas fa-filter mr-1"></i> Sort Episodes
+                </button>
+                <div id="dropdown-content" class="dropdown-content">
+                  <a id="sort-asc" class="block px-4 py-2 text-gray-100 hover:text-blue-500 hover:bg-gray-700 rounded-t-lg">Oldest First</a>
+                  <a id="sort-desc" class="block px-4 py-2 text-gray-100 hover:text-blue-500 hover:bg-gray-700 rounded-b-lg">Newest First</a>
+                </div>
+              </div>
+            </div>
+            <div id="episodes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+          `;
+          // Initial render
+          renderEpisodes(sortedEpisodes, 'episodes-container');
+          // Dropdown toggle
+          document.getElementById('filter-toggle').addEventListener('click', () => {
+            document.getElementById('dropdown-content').classList.toggle('show');
+          });
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (event) => {
+            const dropdown = document.querySelector('.dropdown');
+            if (!dropdown.contains(event.target)) {
+              document.getElementById('dropdown-content').classList.remove('show');
+            }
+          });
+          // Sort listeners
+          document.getElementById('sort-desc').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentSort === 'desc') return;
+            currentSort = 'desc';
+            sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('dropdown-content').classList.remove('show');
+          });
+          document.getElementById('sort-asc').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentSort === 'asc') return;
+            currentSort = 'asc';
+            sortedEpisodes = [...episodes].sort((a, b) => (a.number || 0) - (b.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('dropdown-content').classList.remove('show');
+          });
+        })
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              Error fetching series: ${error.message}
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        });
+    }
+    // Function to render episodes grid
     function renderEpisodes(sortedEpisodes, containerId) {
       const container = document.getElementById(containerId);
       if (container) {
-        container.innerHTML = sortedEpisodes.length ? sortedEpisodes.map(episode => episode.isAd ? episode.adHtml : `
+        container.innerHTML = sortedEpisodes.length ? sortedEpisodes.map(episode => `
           <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
             <div class="relative">
-              <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="Episode ${episode.number}" class="w-full h-40 object-cover" width="300" height="200" loading="lazy">
+              <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="Episode ${episode.number}"
+                   class="w-full h-40 object-cover"
+                   width="300"
+                   height="200"
+                   loading="lazy">
               <div class="absolute top-2 right-2 free-badge">
                 <i class="fas fa-gift"></i> Free
               </div>
@@ -819,7 +881,6 @@
         `;
       });
     }
-    // ... (fungsi lain seperti fetchAnimeList, fetchSeriesDetail, dll. tetap sama seperti sebelumnya, dengan insertNativeAd di grid jika perlu)
     // Client-side routing
     function handleNavigation(event) {
       event.preventDefault();
