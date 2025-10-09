@@ -22,13 +22,8 @@
   <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
   <!-- Font Awesome CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- ADS MOD: Social Bar Script Asli dari Adsterra -->
-  <script type='text/javascript' src='//pl27811413.effectivegatecpm.com/da/89/71/da897172a45410e2b591813d50c8dd8b.js' async></script>
-  
-  <!-- ADS MOD: Popunder Script Tambahan dari Adsterra (delay built-in 10s, background trigger) -->
-  <script type='text/javascript' src='//pl27811428.effectivegatecpm.com/9a/41/92/9a41929a094afe577e739644c4fb6aab.js' async></script>
-  
+  <!-- Social Bar Ad Script -->
+  <script type='text/javascript' src='//pl27811413.effectivegatecpm.com/da/89/71/da897172a45410e2b591813d50c8dd8b.js'></script>
   <style>
     /* Glassmorphism Effect */
     .glass {
@@ -130,13 +125,13 @@
     /* Search Button */
     .search-btn {
       transition: all 0.2s ease;
-      touch-action: manipulation;
+      touch-action: manipulation; /* Hilangkan 300ms delay di mobile */
     }
     .search-btn:hover {
       background-color: #1d4ed8;
     }
     .search-btn:active {
-      background-color: #1d4ed8;
+      background-color: #1d4ed8; /* Feedback visual di touch */
     }
     /* Logo Styling */
     .logo {
@@ -300,20 +295,6 @@
         width: 100%;
       }
     }
-    
-    /* ADS MOD: Styling untuk Social Bar (opacity rendah, hide saat play video) */
-    .adsterra-social-bar {
-      z-index: 9999 !important;
-      background: rgba(31, 41, 55, 0.95) !important;
-      backdrop-filter: blur(12px) !important;
-      border-top: 1px solid rgba(55, 65, 81, 0.3) !important;
-      opacity: 0.8 !important; /* Rendah biar nggak ganggu */
-      transition: opacity 0.3s ease !important;
-    }
-    .adsterra-social-bar.hidden {
-      opacity: 0 !important;
-      display: none !important;
-    }
   </style>
 </head>
 <body class="text-gray-100 min-h-screen flex flex-col">
@@ -366,24 +347,24 @@
       &copy; 2025 WatchNimez by ZexDev
     </div>
   </footer>
-  
   <script>
+    // Alert untuk pembuat website tentang iklan
+    window.addEventListener('load', () => {
+      alert("Website ini berisi iklan. Pembuat website agar bisa update selalu.");
+    });
+
+    // Load Popunder Ad dengan delay 15 detik
+    setTimeout(() => {
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = '//pl27811428.effectivegatecpm.com/9a/41/92/9a41929a094afe577e739644c4fb6aab.js';
+      document.body.appendChild(script);
+    }, 15000);
+
     // Base URL for API
     const API_BASE_URL = 'https://watchnimez.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
-    // FIX: Fungsi retry untuk axios fetch (max 2x, timeout 5s)
-    async function fetchWithRetry(url, options = {}, maxRetries = 2) {
-      for (let retry = 0; retry <= maxRetries; retry++) {
-        try {
-          const response = await axios.get(url, { ...options, timeout: 5000 }); // Timeout 5s biar nggak stuck
-          return response;
-        } catch (error) {
-          if (retry === maxRetries || error.code !== 'ECONNABORTED') throw error; // Retry hanya kalau timeout
-          await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1))); // Delay exponential
-        }
-      }
-    }
     // Toggle mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const mobileMenu = document.getElementById('mobile-menu');
@@ -392,17 +373,19 @@
     });
     // Search functionality
     function handleSearch() {
+      // Cari input yang aktif berdasarkan context (home, desktop, dll.)
       let searchInput = document.getElementById('search-input') ||
                         document.getElementById('mobile-search-input') ||
-                        document.querySelector('.search-input');
-      const keyword = (searchInput ? searchInput.value.trim() : '').replace(/\s+/g, ' ');
+                        document.querySelector('.search-input'); // Fallback ke yang pertama
+      const keyword = (searchInput ? searchInput.value.trim() : '').replace(/\s+/g, ' '); // Normalize spasi
       if (keyword) {
         const encodedPath = `/search/${encodeURIComponent(keyword)}`;
         history.pushState(null, null, encodedPath);
         renderPage(encodedPath);
         if (searchInput) {
-          searchInput.value = '';
+          searchInput.value = ''; // Clear input after search
         }
+        // Close mobile menu after search if open
         const mobileMenu = document.getElementById('mobile-menu');
         mobileMenu.classList.add('hidden');
         mobileMenu.classList.remove('active');
@@ -413,10 +396,10 @@
       if (e.key === 'Enter') handleSearch();
     });
     document.getElementById('desktop-search-btn')?.addEventListener('click', handleSearch);
-    // Event delegation untuk mobile search
+    // Event delegation untuk mobile search - pakai 'touchend' sebagai alternatif 'click' untuk mobile
     document.addEventListener('touchend', (e) => {
       if (e.target.id === 'mobile-search-btn' && !e.target.disabled) {
-        e.preventDefault();
+        e.preventDefault(); // Cegah zoom atau scroll
         handleSearch();
       }
     }, { passive: false });
@@ -430,18 +413,6 @@
         handleSearch();
       }
     });
-    // FIX: Client-side routing dengan delay (biar popunder selesai trigger sebelum render)
-    function handleNavigation(event) {
-      event.preventDefault();
-      const path = event.target.getAttribute('href');
-      history.pushState(null, null, path);
-      // Delay 150ms biar popunder nggak block JS execution
-      setTimeout(() => {
-        renderPage(path);
-        document.getElementById('mobile-menu')?.classList.add('hidden');
-        document.getElementById('mobile-menu')?.classList.remove('active');
-      }, 150);
-    }
     // Render page based on path
     function renderPage(path) {
       const content = document.getElementById('content');
@@ -507,18 +478,22 @@
         `;
       }
     }
-    // Fetch and render home page (pakai fetchWithRetry)
-    async function fetchHome() {
-      try {
-        const [animeRes, donghuaRes] = await Promise.all([
-          fetchWithRetry(`${API_BASE_URL}/api/anime`),
-          fetchWithRetry(`${API_BASE_URL}/api/donghua`)
-        ]);
+    // Fetch and render home page
+    function fetchHome() {
+      // Fetch anime and donghua for featured content
+      Promise.all([
+        axios.get(`${API_BASE_URL}/api/anime`),
+        axios.get(`${API_BASE_URL}/api/donghua`)
+      ]).then(([animeRes, donghuaRes]) => {
         const animes = animeRes.data.data || [];
         const donghuas = donghuaRes.data.data || [];
+        // Combine all series for trending and latest
         const allSeries = [...animes, ...donghuas];
+        // Sort for trending (by views descending)
         const trending = [...allSeries].sort((a, b) => (b.total_views || 0) - (a.total_views || 0)).slice(0, 6);
+        // Sort for latest episodes (by date_created descending)
         const latestEpisodes = [...allSeries].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0)).slice(0, 6);
+        // Featured hero (pick first trending)
         const featured = trending[0] || {};
         const content = document.getElementById('content');
         content.innerHTML = `
@@ -582,26 +557,408 @@
             </div>
           </section>
         `;
-      } catch (error) {
+        // Tidak perlu attach listener lagi, karena sudah pakai delegation
+      }).catch(error => {
         document.getElementById('content').innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
             Error loading home: ${error.message}
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Retry</a>
           </div>
         `;
+      });
+    }
+    // Fetch and render trending page
+    function fetchTrending() {
+      Promise.all([
+        axios.get(`${API_BASE_URL}/api/anime`),
+        axios.get(`${API_BASE_URL}/api/donghua`)
+      ]).then(([animeRes, donghuaRes]) => {
+        const animes = animeRes.data.data || [];
+        const donghuas = donghuaRes.data.data || [];
+        const allSeries = [...animes, ...donghuas];
+        const trending = [...allSeries].sort((a, b) => (b.total_views || 0) - (a.total_views || 0));
+        const content = document.getElementById('content');
+        content.innerHTML = `
+          <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Trending Now</h1>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            ${trending.map(series => `
+              <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+                <div class="relative">
+                  <img src="${series.series_image || PLACEHOLDER_IMAGE}"
+                       onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                       alt="${series.series_title}"
+                       class="w-full h-48 object-cover"
+                       width="300"
+                       height="200"
+                       loading="lazy">
+                  <div class="absolute top-2 right-2 free-badge">
+                    <i class="fas fa-gift"></i> Free
+                  </div>
+                  <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                    <h2 class="text-lg font-semibold text-white">${series.series_title || 'Unknown'}</h2>
+                    <p class="text-sm text-gray-300">Episode ${series.episode_number || 'N/A'}</p>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <p class="text-sm text-gray-400">Views: ${series.total_views?.toLocaleString() || 'N/A'}</p>
+                  <p class="text-sm text-gray-400">Rating: ${series.rating || 'N/A'}</p>
+                  <a href="/series/${series.series_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-eye mr-1"></i> View Series</a>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).catch(error => {
+        document.getElementById('content').innerHTML = `
+          <div class="text-center py-10 text-red-500 fade-in">
+            Error loading trending: ${error.message}
+            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+          </div>
+        `;
+      });
+    }
+    // Fetch and render latest page
+    function fetchLatest() {
+      Promise.all([
+        axios.get(`${API_BASE_URL}/api/anime`),
+        axios.get(`${API_BASE_URL}/api/donghua`)
+      ]).then(([animeRes, donghuaRes]) => {
+        const animes = animeRes.data.data || [];
+        const donghuas = donghuaRes.data.data || [];
+        const allSeries = [...animes, ...donghuas];
+        const latest = [...allSeries].sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0));
+        const content = document.getElementById('content');
+        content.innerHTML = `
+          <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Latest Episodes</h1>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            ${latest.map(series => `
+              <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+                <div class="relative">
+                  <img src="${series.series_image || PLACEHOLDER_IMAGE}"
+                       onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                       alt="${series.series_title}"
+                       class="w-full h-48 object-cover"
+                       width="300"
+                       height="200"
+                       loading="lazy">
+                  <div class="absolute top-2 right-2 free-badge">
+                    <i class="fas fa-gift"></i> Free
+                  </div>
+                  <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                    <h2 class="text-lg font-semibold text-white">${series.series_title || 'Unknown'}</h2>
+                    <p class="text-sm text-gray-300">Episode ${series.episode_number || 'N/A'}</p>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <p class="text-sm text-gray-400">Date: ${series.date_created ? new Date(series.date_created).toLocaleDateString() : 'N/A'}</p>
+                  <p class="text-sm text-gray-400">Rating: ${series.rating || 'N/A'}</p>
+                  <a href="/series/${series.series_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-eye mr-1"></i> View Series</a>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).catch(error => {
+        document.getElementById('content').innerHTML = `
+          <div class="text-center py-10 text-red-500 fade-in">
+            Error loading latest: ${error.message}
+            <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+          </div>
+        `;
+      });
+    }
+    // Fetch and render anime list
+    function fetchAnimeList() {
+      axios.get(`${API_BASE_URL}/api/anime`)
+        .then(response => {
+          const episodes = response.data.data || [];
+          if (!episodes.length) {
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-gray-400 fade-in">
+                No anime available
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+              </div>
+            `;
+            return;
+          }
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Anime List</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              ${episodes.map(episode => `
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+                  <div class="relative">
+                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${episode.series_title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
+                         loading="lazy">
+                    <div class="absolute top-2 right-2 free-badge">
+                      <i class="fas fa-gift"></i> Free
+                    </div>
+                    <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                      <h2 class="text-lg font-semibold text-white">${episode.series_title || 'Unknown'}</h2>
+                      <p class="text-sm text-gray-300">Episode ${episode.episode_number || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <p class="text-sm text-gray-400">Views: ${episode.total_views?.toLocaleString() || 'N/A'}</p>
+                    <p class="text-sm text-gray-400">Rating: ${episode.rating || 'N/A'}</p>
+                    <a href="/series/${episode.series_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-eye mr-1"></i> View Series</a>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              Error fetching anime list: ${error.message}
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        });
+    }
+    // Fetch and render donghua list
+    function fetchDonghuaList() {
+      axios.get(`${API_BASE_URL}/api/donghua`)
+        .then(response => {
+          const episodes = response.data.data || [];
+          if (!episodes.length) {
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-gray-400 fade-in">
+                No donghua available
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+              </div>
+            `;
+            return;
+          }
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Donghua List</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              ${episodes.map(episode => `
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+                  <div class="relative">
+                    <img src="${episode.series_image || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${episode.series_title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
+                         loading="lazy">
+                    <div class="absolute top-2 right-2 free-badge">
+                      <i class="fas fa-gift"></i> Free
+                    </div>
+                    <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                      <h2 class="text-lg font-semibold text-white">${episode.series_title || 'Unknown'}</h2>
+                      <p class="text-sm text-gray-300">Episode ${episode.episode_number || 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <p class="text-sm text-gray-400">Views: ${episode.total_views?.toLocaleString() || 'N/A'}</p>
+                    <p class="text-sm text-gray-400">Rating: ${episode.rating || 'N/A'}</p>
+                    <a href="/series/${episode.series_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-eye mr-1"></i> View Series</a>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              Error fetching donghua list: ${error.message}
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        });
+    }
+    // Fetch and render search results
+    function fetchSearchResults(keyword) {
+      axios.get(`${API_BASE_URL}/api/search`, { params: { keyword } })
+        .then(response => {
+          const series = response.data.data || [];
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">Search Results for "${keyword}"</h1>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              ${series.length ? series.map(item => `
+                <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+                  <div class="relative">
+                    <img src="${item.image_url || PLACEHOLDER_IMAGE}"
+                         onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                         alt="${item.title}"
+                         class="w-full h-48 object-cover"
+                         width="300"
+                         height="200"
+                         loading="lazy">
+                    <div class="absolute top-2 right-2 free-badge">
+                      <i class="fas fa-gift"></i> Free
+                    </div>
+                    <div class="absolute bottom-0 w-full p-4 gradient-overlay">
+                      <h2 class="text-lg font-semibold text-white">${item.title || 'Unknown'}</h2>
+                      <p class="text-sm text-gray-300">${item.type || 'Series'}</p>
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <p class="text-sm text-gray-400">Rating: ${item.rating || 'N/A'}</p>
+                    <p class="text-sm text-gray-400">Latest Episode: ${item.latest_episode || 'N/A'}</p>
+                    <a href="/series/${item.id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-eye mr-1"></i> View Series</a>
+                  </div>
+                </div>
+              `).join('') : '<div class="text-center text-gray-400 fade-in">No results found</div>'}
+            </div>
+          `;
+        })
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              Error fetching search results: ${error.message}
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        });
+    }
+    // Function to render episodes grid
+    function renderEpisodes(sortedEpisodes, containerId) {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = sortedEpisodes.length ? sortedEpisodes.map(episode => `
+          <div class="glass rounded-xl overflow-hidden card-hover transition-all duration-300 border border-gray-700 fade-in">
+            <div class="relative">
+              <img src="${episode.thumbnail || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="Episode ${episode.number}"
+                   class="w-full h-40 object-cover"
+                   width="300"
+                   height="200"
+                   loading="lazy">
+              <div class="absolute top-2 right-2 free-badge">
+                <i class="fas fa-gift"></i> Free
+              </div>
+            </div>
+            <div class="p-4">
+              <p class="text-gray-300 font-medium">Episode ${episode.number || 'N/A'}</p>
+              <p class="text-gray-400 text-sm">Views: ${episode.views ? episode.views.toLocaleString() : 'N/A'}</p>
+              <p class="text-gray-400 text-sm">Duration: ${episode.duration_min || 'N/A'} min</p>
+              <a href="/episode/${episode.episode_id}" class="mt-3 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-play mr-1"></i> Watch Video</a>
+            </div>
+          </div>
+        `).join('') : '<div class="text-center text-gray-400 fade-in">No episodes available</div>';
       }
     }
-    // Fetch and render video player (pakai fetchWithRetry, Social Bar hide logic)
-    async function fetchVideo(episodeId) {
-      try {
-        const [videoRes, animeRes, donghuaRes] = await Promise.all([
-          fetchWithRetry(`${API_BASE_URL}/api/episode/${episodeId}/video`),
-          fetchWithRetry(`${API_BASE_URL}/api/anime`),
-          fetchWithRetry(`${API_BASE_URL}/api/donghua`)
-        ]);
+    // Fetch and render series details
+    function fetchSeriesDetail(seriesId) {
+      axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
+        .then(response => {
+          const series = response.data.series_info || {};
+          let episodes = response.data.episodes || [];
+          if (!series.id) {
+            document.getElementById('content').innerHTML = `
+              <div class="text-center py-10 text-red-500 fade-in">
+                Series not found
+                <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+              </div>
+            `;
+            return;
+          }
+          // Sort episodes by number descending (newest first) by default
+          let sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+          let currentSort = 'desc';
+          const content = document.getElementById('content');
+          content.innerHTML = `
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-8 text-gray-100 tracking-tight fade-in">${series.title || 'Unknown'}</h1>
+            <div class="glass rounded-xl p-6 flex flex-col md:flex-row gap-6 fade-in">
+              <img src="${series.image_url || PLACEHOLDER_IMAGE}"
+                   onerror="this.src='${PLACEHOLDER_IMAGE}'"
+                   alt="${series.title}"
+                   class="w-full md:w-1/3 h-80 md:h-96 object-cover rounded-xl border border-gray-700"
+                   width="400"
+                   height="600"
+                   loading="lazy">
+              <div class="flex-1">
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Synopsis:</strong> ${series.synopsis || 'No synopsis available'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Type:</strong> ${series.type || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Status:</strong> ${series.status || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Season:</strong> ${series.season || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Studio:</strong> ${series.studio || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Genres:</strong> ${series.genres && series.genres.length ? series.genres.join(', ') : 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Latest Episode:</strong> ${series.latest_episode || 'N/A'}</p>
+                <p class="text-gray-300 mb-3"><strong class="text-blue-500 font-semibold">Rating:</strong> ${series.rating || 'N/A'}</p>
+              </div>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-extrabold mt-10 mb-6 text-gray-100 tracking-tight fade-in">Episodes</h2>
+            <div class="flex justify-center mb-4">
+              <div class="dropdown">
+                <button id="filter-toggle" class="px-4 py-2 rounded-lg text-white bg-gray-600 hover:bg-gray-500 transition-colors duration-200">
+                  <i class="fas fa-filter mr-1"></i> Sort Episodes
+                </button>
+                <div id="dropdown-content" class="dropdown-content">
+                  <a id="sort-asc" class="block px-4 py-2 text-gray-100 hover:text-blue-500 hover:bg-gray-700 rounded-t-lg">Oldest First</a>
+                  <a id="sort-desc" class="block px-4 py-2 text-gray-100 hover:text-blue-500 hover:bg-gray-700 rounded-b-lg">Newest First</a>
+                </div>
+              </div>
+            </div>
+            <div id="episodes-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+          `;
+          // Initial render
+          renderEpisodes(sortedEpisodes, 'episodes-container');
+          // Dropdown toggle
+          document.getElementById('filter-toggle').addEventListener('click', () => {
+            document.getElementById('dropdown-content').classList.toggle('show');
+          });
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (event) => {
+            const dropdown = document.querySelector('.dropdown');
+            if (!dropdown.contains(event.target)) {
+               document.getElementById('dropdown-content').classList.remove('show');
+            }
+          });
+          // Sort listeners
+          document.getElementById('sort-desc').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentSort === 'desc') return;
+            currentSort = 'desc';
+            sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('dropdown-content').classList.remove('show');
+          });
+          document.getElementById('sort-asc').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentSort === 'asc') return;
+            currentSort = 'asc';
+            sortedEpisodes = [...episodes].sort((a, b) => (a.number || 0) - (b.number || 0));
+            renderEpisodes(sortedEpisodes, 'episodes-container');
+            document.getElementById('dropdown-content').classList.remove('show');
+          });
+        })
+        .catch(error => {
+          document.getElementById('content').innerHTML = `
+            <div class="text-center py-10 text-red-500 fade-in">
+              Error fetching series: ${error.message}
+              <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
+            </div>
+          `;
+        });
+    }
+    // Fetch and render video player
+    function fetchVideo(episodeId) {
+      const videoUrl = `${API_BASE_URL}/api/episode/${episodeId}/video`;
+      const animeUrl = `${API_BASE_URL}/api/anime`;
+      const donghuaUrl = `${API_BASE_URL}/api/donghua`;
+      Promise.all([
+        axios.get(videoUrl),
+        axios.get(animeUrl),
+        axios.get(donghuaUrl)
+      ]).then(async ([videoRes, animeRes, donghuaRes]) => {
         const videos = videoRes.data.data || [];
         const animes = animeRes.data.data || [];
         const donghuas = donghuaRes.data.data || [];
+        // Cari episode match berdasarkan episode_id
         const episodeMatch = [...animes, ...donghuas].find(ep => ep.episode_id === episodeId);
         if (!episodeMatch) {
           document.getElementById('content').innerHTML = `
@@ -614,14 +971,17 @@
         }
         const seriesId = episodeMatch.series_id;
         const tempTitle = episodeMatch.series_title;
+        // Tentukan type berdasarkan endpoint mana yang match
         const type = animes.some(ep => ep.episode_id === episodeId) ? 'anime' : 'donghua';
         let episodeTitle = tempTitle;
+        // Fetch series untuk title final (dari series_info.title)
         try {
-          const seriesRes = await fetchWithRetry(`${API_BASE_URL}/api/series/${seriesId}`);
+          const seriesRes = await axios.get(`${API_BASE_URL}/api/series/${seriesId}`);
           const seriesInfo = seriesRes.data.series_info || {};
           episodeTitle = seriesInfo.title || tempTitle;
         } catch (seriesError) {
           console.warn('Failed to fetch series info:', seriesError);
+          // Lanjut dengan tempTitle
         }
         if (videos.length > 0) {
           const defaultVideo = videos[0];
@@ -658,14 +1018,15 @@
             >
               <i class="fas fa-download mr-1"></i> Download (${defaultVideo.quality})
             </a>
-            <!-- Latest Episodes Grid -->
+            <!-- No.1 - Grid 4 Card Latest Episodes Sesuai Type (Anime/Donghua) -->
             <section class="mt-8 fade-in">
               <h2 class="text-xl md:text-2xl font-semibold text-gray-100 mb-4">Latest ${type.charAt(0).toUpperCase() + type.slice(1)} Episodes</h2>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="latest-episodes-grid">
+                <!-- Akan diisi oleh JS setelah fetch -->
                 <div class="text-center text-gray-400 py-8 col-span-full">Loading latest...</div>
               </div>
             </section>
-            <!-- Share Buttons -->
+            <!-- No.5 - Share & Social Buttons (Tetap Sama, dengan Icon Bagus) -->
             <section class="mt-8 flex flex-wrap gap-3 justify-center fade-in">
               <h3 class="w-full text-center text-gray-300 mb-3 font-medium">Share This Episode</h3>
               <button onclick="shareToTwitter('${episodeTitle}')" class="glass p-3 rounded-lg hover:bg-blue-800 transition-colors duration-200 flex items-center gap-2 text-white">
@@ -682,7 +1043,7 @@
               </button>
             </section>
           `;
-          // Quality buttons logic
+          // Event listener for quality buttons
           document.querySelectorAll('.quality-btn').forEach(button => {
             button.addEventListener('click', () => {
               const videoPlayer = document.getElementById('video-player');
@@ -702,50 +1063,35 @@
               videoPlayer.play();
             });
           });
-          // ADS MOD: Hide Social Bar saat video play
-          const videoPlayer = document.getElementById('video-player');
-          const toggleSocialBar = (show) => {
-            const sbElement = document.querySelector('.adsterra-social-bar') || document.querySelector('[class*="social-bar"]');
-            if (sbElement) {
-              if (show) {
-                sbElement.classList.remove('hidden');
-                sbElement.style.display = 'block';
-              } else {
-                sbElement.classList.add('hidden');
-                sbElement.style.display = 'none';
-              }
-            }
-          };
-          videoPlayer.addEventListener('play', () => toggleSocialBar(false));
-          videoPlayer.addEventListener('pause', () => toggleSocialBar(true));
-          videoPlayer.addEventListener('ended', () => toggleSocialBar(true));
-          // Latest episodes fetch (pakai fetchWithRetry)
+          // Fetch dan Render Latest Episodes Sesuai Type (No.1)
           const apiEndpoint = type === 'donghua' ? `${API_BASE_URL}/api/donghua` : `${API_BASE_URL}/api/anime`;
-          try {
-            const latestRes = await fetchWithRetry(apiEndpoint);
-            const allEpisodes = latestRes.data.data || [];
-            const latestEpisodes = [...allEpisodes]
-              .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
-              .slice(0, 4);
-            const grid = document.getElementById('latest-episodes-grid');
-            if (latestEpisodes.length > 0) {
-              grid.innerHTML = latestEpisodes.map(ep => `
-                <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
-                  <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
-                  <div class="p-2">
-                    <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
-                    <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
-                    <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
+          axios.get(apiEndpoint)
+            .then(latestRes => {
+              const allEpisodes = latestRes.data.data || [];
+              // Sort by date_created descending (latest first), ambil 4
+              const latestEpisodes = [...allEpisodes]
+                .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
+                .slice(0, 4);
+              const grid = document.getElementById('latest-episodes-grid');
+              if (latestEpisodes.length > 0) {
+                grid.innerHTML = latestEpisodes.map(ep => `
+                  <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                    <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
+                    <div class="p-2">
+                      <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
+                      <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
+                      <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
+                    </div>
                   </div>
-                </div>
-              `).join('');
-            } else {
-              grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
-            }
-          } catch (error) {
-            document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
-          }
-          // Share functions
+                `).join('');
+              } else {
+                grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
+              }
+            })
+            .catch(() => {
+              document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
+            });
+          // Fungsi Share (No.5)
           window.shareToTwitter = (title) => {
             const url = `${API_BASE_URL}${window.location.pathname}`;
             const text = `Nonton ${title} di WatchNimez! Gratis 🔥 ${url}`;
@@ -775,16 +1121,25 @@
             </div>
           `;
         }
-      } catch (error) {
+      }).catch(error => {
         document.getElementById('content').innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
             Error fetching video: ${error.message}
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
           </div>
         `;
-      }
+      });
     }
-    // Client-side routing (sudah di-fix di handleNavigation)
+    // Client-side routing
+    function handleNavigation(event) {
+      event.preventDefault();
+      const path = event.target.getAttribute('href');
+      history.pushState(null, null, path);
+      renderPage(path);
+      document.getElementById('mobile-menu').classList.add('hidden');
+      document.getElementById('mobile-menu').classList.remove('active');
+    }
+    // Initialize page
     window.addEventListener('popstate', () => renderPage(window.location.pathname));
     document.addEventListener('click', event => {
       if (event.target.tagName === 'A' && event.target.getAttribute('href').startsWith('/')) {
