@@ -6,36 +6,21 @@
       "use": "@vercel/python"
     },
     {
-      "src": "public/**",
+      "src": "index.html",
       "use": "@vercel/static"
     }
   ],
   "routes": [
-    {
-      "src": "/public/sw.js",
-      "dest": "/public/sw.js"
-    },
     {
       "src": "/api/(.*)",
       "dest": "app.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "index.html"
     }
   ],
   "env": {
     "PYTHON_VERSION": "3.9"
-  },
-  "headers": [
-    {
-      "source": "/public/sw.js",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        }
-      ]
-    }
-  ]
+  }
 }
