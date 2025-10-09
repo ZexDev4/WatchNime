@@ -23,10 +23,10 @@
   <!-- Font Awesome CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- ADS MOD: Social Bar Script Asli dari Adsterra (untuk aktivasi, cek dashboard kalau belum muncul) -->
+  <!-- ADS MOD: Social Bar Script Asli dari Adsterra -->
   <script type='text/javascript' src='//pl27811413.effectivegatecpm.com/da/89/71/da897172a45410e2b591813d50c8dd8b.js' async></script>
   
-  <!-- ADS MOD: Popunder Script Tambahan dari Adsterra (trigger subtle: background, delay 10s, max 4/2jam) -->
+  <!-- ADS MOD: Popunder Script Tambahan dari Adsterra (delay built-in 10s, background trigger) -->
   <script type='text/javascript' src='//pl27811428.effectivegatecpm.com/9a/41/92/9a41929a094afe577e739644c4fb6aab.js' async></script>
   
   <style>
@@ -372,6 +372,18 @@
     const API_BASE_URL = 'https://watchnimez.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
+    // FIX: Fungsi retry untuk axios fetch (max 2x, timeout 5s)
+    async function fetchWithRetry(url, options = {}, maxRetries = 2) {
+      for (let retry = 0; retry <= maxRetries; retry++) {
+        try {
+          const response = await axios.get(url, { ...options, timeout: 5000 }); // Timeout 5s biar nggak stuck
+          return response;
+        } catch (error) {
+          if (retry === maxRetries || error.code !== 'ECONNABORTED') throw error; // Retry hanya kalau timeout
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1))); // Delay exponential
+        }
+      }
+    }
     // Toggle mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const mobileMenu = document.getElementById('mobile-menu');
@@ -418,6 +430,18 @@
         handleSearch();
       }
     });
+    // FIX: Client-side routing dengan delay (biar popunder selesai trigger sebelum render)
+    function handleNavigation(event) {
+      event.preventDefault();
+      const path = event.target.getAttribute('href');
+      history.pushState(null, null, path);
+      // Delay 150ms biar popunder nggak block JS execution
+      setTimeout(() => {
+        renderPage(path);
+        document.getElementById('mobile-menu')?.classList.add('hidden');
+        document.getElementById('mobile-menu')?.classList.remove('active');
+      }, 150);
+    }
     // Render page based on path
     function renderPage(path) {
       const content = document.getElementById('content');
@@ -483,12 +507,13 @@
         `;
       }
     }
-    // Fetch and render home page
-    function fetchHome() {
-      Promise.all([
-        axios.get(`${API_BASE_URL}/api/anime`),
-        axios.get(`${API_BASE_URL}/api/donghua`)
-      ]).then(([animeRes, donghuaRes]) => {
+    // Fetch and render home page (pakai fetchWithRetry)
+    async function fetchHome() {
+      try {
+        const [animeRes, donghuaRes] = await Promise.all([
+          fetchWithRetry(`${API_BASE_URL}/api/anime`),
+          fetchWithRetry(`${API_BASE_URL}/api/donghua`)
+        ]);
         const animes = animeRes.data.data || [];
         const donghuas = donghuaRes.data.data || [];
         const allSeries = [...animes, ...donghuas];
@@ -557,25 +582,23 @@
             </div>
           </section>
         `;
-      }).catch(error => {
+      } catch (error) {
         document.getElementById('content').innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
             Error loading home: ${error.message}
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Retry</a>
           </div>
         `;
-      });
+      }
     }
-    // Fetch and render video player (dengan Social Bar hide logic)
-    function fetchVideo(episodeId) {
-      const videoUrl = `${API_BASE_URL}/api/episode/${episodeId}/video`;
-      const animeUrl = `${API_BASE_URL}/api/anime`;
-      const donghuaUrl = `${API_BASE_URL}/api/donghua`;
-      Promise.all([
-        axios.get(videoUrl),
-        axios.get(animeUrl),
-        axios.get(donghuaUrl)
-      ]).then(async ([videoRes, animeRes, donghuaRes]) => {
+    // Fetch and render video player (pakai fetchWithRetry, Social Bar hide logic)
+    async function fetchVideo(episodeId) {
+      try {
+        const [videoRes, animeRes, donghuaRes] = await Promise.all([
+          fetchWithRetry(`${API_BASE_URL}/api/episode/${episodeId}/video`),
+          fetchWithRetry(`${API_BASE_URL}/api/anime`),
+          fetchWithRetry(`${API_BASE_URL}/api/donghua`)
+        ]);
         const videos = videoRes.data.data || [];
         const animes = animeRes.data.data || [];
         const donghuas = donghuaRes.data.data || [];
@@ -594,7 +617,7 @@
         const type = animes.some(ep => ep.episode_id === episodeId) ? 'anime' : 'donghua';
         let episodeTitle = tempTitle;
         try {
-          const seriesRes = await axios.get(`${API_BASE_URL}/api/series/${seriesId}`);
+          const seriesRes = await fetchWithRetry(`${API_BASE_URL}/api/series/${seriesId}`);
           const seriesInfo = seriesRes.data.series_info || {};
           episodeTitle = seriesInfo.title || tempTitle;
         } catch (seriesError) {
@@ -679,7 +702,7 @@
               videoPlayer.play();
             });
           });
-          // ADS MOD: Hide Social Bar saat video play (biar nggak ganggu)
+          // ADS MOD: Hide Social Bar saat video play
           const videoPlayer = document.getElementById('video-player');
           const toggleSocialBar = (show) => {
             const sbElement = document.querySelector('.adsterra-social-bar') || document.querySelector('[class*="social-bar"]');
@@ -696,33 +719,32 @@
           videoPlayer.addEventListener('play', () => toggleSocialBar(false));
           videoPlayer.addEventListener('pause', () => toggleSocialBar(true));
           videoPlayer.addEventListener('ended', () => toggleSocialBar(true));
-          // Latest episodes fetch
+          // Latest episodes fetch (pakai fetchWithRetry)
           const apiEndpoint = type === 'donghua' ? `${API_BASE_URL}/api/donghua` : `${API_BASE_URL}/api/anime`;
-          axios.get(apiEndpoint)
-            .then(latestRes => {
-              const allEpisodes = latestRes.data.data || [];
-              const latestEpisodes = [...allEpisodes]
-                .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
-                .slice(0, 4);
-              const grid = document.getElementById('latest-episodes-grid');
-              if (latestEpisodes.length > 0) {
-                grid.innerHTML = latestEpisodes.map(ep => `
-                  <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
-                    <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
-                    <div class="p-2">
-                      <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
-                      <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
-                      <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
-                    </div>
+          try {
+            const latestRes = await fetchWithRetry(apiEndpoint);
+            const allEpisodes = latestRes.data.data || [];
+            const latestEpisodes = [...allEpisodes]
+              .sort((a, b) => new Date(b.date_created || 0) - new Date(a.date_created || 0))
+              .slice(0, 4);
+            const grid = document.getElementById('latest-episodes-grid');
+            if (latestEpisodes.length > 0) {
+              grid.innerHTML = latestEpisodes.map(ep => `
+                <div class="glass rounded-xl overflow-hidden card-hover border border-gray-700">
+                  <img src="${ep.series_image || PLACEHOLDER_IMAGE}" onerror="this.src='${PLACEHOLDER_IMAGE}'" alt="${ep.series_title}" class="w-full h-20 object-cover">
+                  <div class="p-2">
+                    <h4 class="text-xs font-semibold truncate">${ep.series_title || 'Unknown'}</h4>
+                    <p class="text-xs text-gray-400">Ep ${ep.episode_number || 'N/A'}</p>
+                    <a href="/episode/${ep.episode_id || ''}" class="mt-1 inline-block text-blue-500 text-xs hover:underline">Watch</a>
                   </div>
-                `).join('');
-              } else {
-                grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
-              }
-            })
-            .catch(() => {
-              document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
-            });
+                </div>
+              `).join('');
+            } else {
+              grid.innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">No latest episodes available</div>';
+            }
+          } catch (error) {
+            document.getElementById('latest-episodes-grid').innerHTML = '<div class="text-center text-gray-400 col-span-full py-4">Error loading latest episodes</div>';
+          }
           // Share functions
           window.shareToTwitter = (title) => {
             const url = `${API_BASE_URL}${window.location.pathname}`;
@@ -753,25 +775,16 @@
             </div>
           `;
         }
-      }).catch(error => {
+      } catch (error) {
         document.getElementById('content').innerHTML = `
           <div class="text-center py-10 text-red-500 fade-in">
             Error fetching video: ${error.message}
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
           </div>
         `;
-      });
+      }
     }
-    // Client-side routing
-    function handleNavigation(event) {
-      event.preventDefault();
-      const path = event.target.getAttribute('href');
-      history.pushState(null, null, path);
-      renderPage(path);
-      document.getElementById('mobile-menu').classList.add('hidden');
-      document.getElementById('mobile-menu').classList.remove('active');
-    }
-    // Initialize page
+    // Client-side routing (sudah di-fix di handleNavigation)
     window.addEventListener('popstate', () => renderPage(window.location.pathname));
     document.addEventListener('click', event => {
       if (event.target.tagName === 'A' && event.target.getAttribute('href').startsWith('/')) {
