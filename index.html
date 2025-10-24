@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WatchNimez</title>
-  <!-- Open Graph Meta Tags -->
+  <!-- Open Graph Meta Tags (Default untuk Home) -->
   <meta property="og:title" content="WatchNimez - Stream Anime & Donghua Free">
   <meta property="og:description" content="Watch the latest anime and donghua episodes for free. Discover trending series, latest releases, and more.">
   <meta property="og:image" content="https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/watchnimez.png">
   <meta property="og:url" content="https://watchnimez.vercel.app">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="WatchNimez">
-  <!-- Twitter Card Meta Tags -->
+  <!-- Twitter Card Meta Tags (Default) -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="WatchNimez - Stream Anime & Donghua Free">
   <meta name="twitter:description" content="Watch the latest anime and donghua episodes for free. Discover trending series, latest releases, and more.">
@@ -365,6 +365,41 @@
     const API_BASE_URL = 'https://watchnimez.vercel.app';
     // Placeholder image (base64)
     const PLACEHOLDER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAg/wJHWgAAAABJRU5ErkJggg==';
+    
+    // Fungsi baru: Update Meta Tags untuk Sharing (OG & Twitter)
+    function updateMetaTags(title, image, description = '') {
+      // Update title browser
+      document.title = title || 'WatchNimez - Stream Anime & Donghua Free';
+      
+      // Helper untuk set meta property
+      function setMeta(prop, value) {
+        let meta = document.querySelector(`meta[property="${prop}"]`) || document.querySelector(`meta[name="${prop}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute(prop.startsWith('og:') ? 'property' : 'name', prop);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', value || '');
+      }
+      
+      // Update OG
+      setMeta('og:title', title);
+      setMeta('og:image', image || 'https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/watchnimez.png');
+      setMeta('og:description', description || 'Watch the latest anime and donghua episodes for free.');
+      setMeta('og:url', `${API_BASE_URL}${window.location.pathname}`);
+      
+      // Update Twitter
+      setMeta('twitter:title', title);
+      setMeta('twitter:image', image || 'https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/watchnimez.png');
+      setMeta('twitter:description', description || 'Watch the latest anime and donghua episodes for free.');
+      setMeta('twitter:card', 'summary_large_image'); // Pastikan tetap large image
+    }
+    
+    // Reset ke default meta saat ke home atau page lain
+    function resetMetaTags() {
+      updateMetaTags('WatchNimez - Stream Anime & Donghua Free', 'https://raw.githubusercontent.com/ZexDev4/WatchNime/refs/heads/main/watchnimez.png');
+    }
+
     // Toggle mobile menu
     document.getElementById('menu-toggle').addEventListener('click', () => {
       const mobileMenu = document.getElementById('mobile-menu');
@@ -425,14 +460,19 @@
       content.classList.add('fade-in');
       if (path === '/') {
         fetchHome();
+        resetMetaTags(); // Reset ke default
       } else if (path === '/anime') {
         fetchAnimeList();
+        resetMetaTags();
       } else if (path === '/donghua') {
         fetchDonghuaList();
+        resetMetaTags();
       } else if (path === '/trending') {
         fetchTrending();
+        resetMetaTags();
       } else if (path === '/latest') {
         fetchLatest();
+        resetMetaTags();
       } else if (path.startsWith('/search/')) {
         const keyword = decodeURIComponent(path.split('/')[2] || '');
         if (!keyword) {
@@ -442,9 +482,11 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
           return;
         }
         fetchSearchResults(keyword);
+        resetMetaTags();
       } else if (path.startsWith('/series/')) {
         const seriesId = path.split('/')[2];
         if (!seriesId || seriesId.trim() === '') {
@@ -454,6 +496,7 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
           return;
         }
         fetchSeriesDetail(seriesId);
@@ -466,6 +509,7 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
           return;
         }
         fetchVideo(episodeId);
@@ -476,6 +520,7 @@
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
           </div>
         `;
+        resetMetaTags();
       }
     }
     // Fetch and render home page
@@ -851,7 +896,7 @@
         `).join('') : '<div class="text-center text-gray-400 fade-in">No episodes available</div>';
       }
     }
-    // Fetch and render series details
+    // Fetch and render series details (Updated: Tambah updateMetaTags)
     function fetchSeriesDetail(seriesId) {
       axios.get(`${API_BASE_URL}/api/series/${seriesId}`)
         .then(response => {
@@ -864,8 +909,16 @@
                 <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
               </div>
             `;
+            resetMetaTags();
             return;
           }
+          // Update meta tags dengan data series
+          updateMetaTags(
+            `${series.title || 'Unknown Series'} - WatchNimez`,
+            series.image_url || PLACEHOLDER_IMAGE,
+            series.synopsis ? `${series.synopsis.substring(0, 160)}...` : 'Watch anime and donghua episodes for free.'
+          );
+          
           // Sort episodes by number descending (newest first) by default
           let sortedEpisodes = [...episodes].sort((a, b) => (b.number || 0) - (a.number || 0));
           let currentSort = 'desc';
@@ -943,9 +996,10 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
         });
     }
-    // Fetch and render video player
+    // Fetch and render video player (Updated: Tambah updateMetaTags)
     function fetchVideo(episodeId) {
       const videoUrl = `${API_BASE_URL}/api/episode/${episodeId}/video`;
       const animeUrl = `${API_BASE_URL}/api/anime`;
@@ -967,6 +1021,7 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
           return;
         }
         const seriesId = episodeMatch.series_id;
@@ -983,6 +1038,14 @@
           console.warn('Failed to fetch series info:', seriesError);
           // Lanjut dengan tempTitle
         }
+        // Update meta tags dengan data episode (thumbnail dari series_image)
+        const desc = `${episodeTitle} - Episode ${episodeMatch.episode_number || 'N/A'}. Watch for free on WatchNimez.`;
+        updateMetaTags(
+          `${episodeTitle} Episode ${episodeMatch.episode_number || 'N/A'} - WatchNimez`,
+          episodeMatch.series_image || PLACEHOLDER_IMAGE,
+          desc
+        );
+        
         if (videos.length > 0) {
           const defaultVideo = videos[0];
           const content = document.getElementById('content');
@@ -1120,6 +1183,7 @@
               <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
             </div>
           `;
+          resetMetaTags();
         }
       }).catch(error => {
         document.getElementById('content').innerHTML = `
@@ -1128,6 +1192,7 @@
             <a href="/" class="mt-4 inline-block bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors duration-200"><i class="fas fa-arrow-left mr-1"></i> Back to Home</a>
           </div>
         `;
+        resetMetaTags();
       });
     }
     // Client-side routing
