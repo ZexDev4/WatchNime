@@ -25,9 +25,12 @@
   <!-- Social Bar Ad Script -->
   <script type='text/javascript' src='//pl27811413.effectivegatecpm.com/da/89/71/da897172a45410e2b591813d50c8dd8b.js'></script>
   <style>
-    /* Neon Anime Theme: Vibrant, Glowing, Wibu-Style */
+    /* Abstract Anime Theme: Ethereal, Layered, Non-Plain Background */
     body {
-      background: linear-gradient(135deg, #0f0f23 0%, #1a0033 50%, #330066 100%);
+      background: 
+        radial-gradient(ellipse at 25% 25%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 75%, rgba(255, 105, 180, 0.08) 0%, transparent 50%),
+        linear-gradient(45deg, #0f0f23 0%, #1a0033 30%, #330066 60%, #0a0a1a 100%);
       min-height: 100vh;
       font-family: 'Inter', sans-serif;
       color: #f0f0ff;
@@ -42,15 +45,49 @@
       width: 100%;
       height: 100%;
       background: 
-        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+        conic-gradient(from 0deg at 30% 30%, rgba(120, 219, 255, 0.05) 0deg, transparent 90deg, rgba(255, 105, 180, 0.05) 180deg, transparent 270deg),
+        radial-gradient(circle at 60% 40%, rgba(138, 43, 226, 0.06) 0%, transparent 70%),
+        radial-gradient(circle at 10% 90%, rgba(255, 20, 147, 0.04) 0%, transparent 60%);
       z-index: -1;
-      animation: neonPulse 4s ease-in-out infinite alternate;
+      animation: abstractDrift 20s ease-in-out infinite alternate;
+      opacity: 0.7;
     }
-    @keyframes neonPulse {
-      0% { opacity: 0.8; }
-      100% { opacity: 1; }
+    @keyframes abstractDrift {
+      0% { 
+        transform: rotate(0deg) scale(1); 
+        opacity: 0.6;
+      }
+      100% { 
+        transform: rotate(180deg) scale(1.1); 
+        opacity: 0.8;
+      }
+    }
+    /* Subtle Particle Overlay for Depth */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.15), transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(138, 43, 226, 0.12), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255, 105, 180, 0.1), transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(120, 219, 255, 0.08), transparent);
+      background-repeat: repeat;
+      background-size: 200px 100px;
+      animation: particleFloat 30s linear infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+    @keyframes particleFloat {
+      from { 
+        transform: translateY(0px) rotate(0deg); 
+      }
+      to { 
+        transform: translateY(-100px) rotate(360deg); 
+      }
     }
     /* Neon Cards with Glow */
     .neon-card {
